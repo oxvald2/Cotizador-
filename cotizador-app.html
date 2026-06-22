@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotizador — Laios Group</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#132f33; --teal-soft:#1d4147; --gold:#dda11b; --gold-ink:#dda11b; --gold-ghost:#e6cf9c;
+    --bone:#c1bbaa; --bone-tint:#ece8df;
+    --ink:#132f33; --paper:#fbfaf6;
+    /* contraste corregido: cuerpo ≥7:1, secundario ≥5:1 sobre --paper */
+    --gray:#5b5648; --gray-2:#6f6a5b;
+    --line:#e6e2d7; --line-2:#cfcabd;
+    --ease:cubic-bezier(.22,1,.36,1);
+    /* escala z-index semántica */
+    --z-sticky:100; --z-tab:200;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Archivo',system-ui,sans-serif;background:#cdc8bb;color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;}
+
+  :focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:4px;}
+
+  .app{display:grid;grid-template-columns:340px 1fr;min-height:100vh;}
+
+  /* ===================== CONTROL PANEL ===================== */
+  .panel{background:var(--teal);color:var(--bone);padding:24px 22px 40px;position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;z-index:var(--z-sticky);}
+  .panel .pbrand{font-family:'Anton';font-size:24px;letter-spacing:.05em;text-transform:uppercase;color:var(--gold);}
+  .panel .ptag{font-family:'IBM Plex Mono';font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--bone);opacity:.8;margin-top:5px;}
+  .panel hr{border:none;border-top:1px solid rgba(193,187,170,.2);margin:18px 0;}
+  /* divisores de sección del panel: el dorado-mono queda reservado a ESTOS (pocos), no a cada label */
+  .sec-label{font-family:'IBM Plex Mono';font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;}
+
+  /* labels de campo: sentence-case, sans, sin tracking, en hueso — rompe el monocultivo de eyebrows */
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-family:'Archivo';font-size:11.5px;font-weight:600;letter-spacing:.005em;color:var(--bone);opacity:.9;margin-bottom:6px;}
+  .field input{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(193,187,170,.28);color:#fff;font-family:'IBM Plex Mono';font-size:13px;padding:9px 11px;border-radius:5px;outline:none;transition:border-color .16s var(--ease),background .16s var(--ease);}
+  .field input:focus{border-color:var(--gold);background:rgba(255,255,255,.1);}
+
+  .levels-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;}
+  .levels-head .lh-l{font-family:'Archivo';font-size:11.5px;font-weight:600;color:var(--bone);opacity:.9;}
+  .lvl-row{display:grid;grid-template-columns:64px 1fr 52px;gap:8px;align-items:center;margin-bottom:7px;}
+  .lvl-row .ln{font-family:'IBM Plex Mono';font-size:11px;color:var(--bone);}
+  .lvl-row input{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(193,187,170,.28);color:#fff;font-family:'IBM Plex Mono';font-size:12px;padding:7px 9px;border-radius:5px;outline:none;transition:border-color .16s var(--ease);}
+  .lvl-row input:focus{border-color:var(--gold);}
+  .lvl-row .tier{font-family:'IBM Plex Mono';font-size:10px;color:var(--gold);text-align:right;}
+
+  .stepper{display:flex;gap:6px;}
+  .stepper button{width:28px;height:28px;border:1px solid rgba(193,187,170,.3);background:rgba(255,255,255,.05);color:var(--bone);border-radius:5px;cursor:pointer;font-size:15px;line-height:1;transition:background .15s var(--ease),color .15s var(--ease),border-color .15s var(--ease);}
+  .stepper button:hover{background:var(--gold);color:var(--teal);border-color:var(--gold);}
+  .stepper .nval{flex:1;display:grid;place-items:center;font-family:'IBM Plex Mono';font-size:14px;color:#fff;}
+
+  .seg{display:inline-flex;background:rgba(255,255,255,.08);border-radius:999px;padding:3px;border:1px solid rgba(193,187,170,.25);}
+  .seg button{font-family:'IBM Plex Mono';font-size:12px;font-weight:600;border:none;background:transparent;color:var(--bone);padding:6px 14px;border-radius:999px;cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);}
+  .seg button.active{background:var(--gold);color:var(--teal);}
+  .seg.seg-sm button{padding:4px 11px;font-size:10.5px;}
+
+  /* toggles ahora son <button role="switch"> — enfocables y operables con teclado */
+  .switch{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;padding:6px 0;width:100%;background:none;border:none;font:inherit;text-align:left;color:inherit;}
+  .switch span{font-family:'Archivo';font-weight:600;font-size:12.5px;color:var(--bone);}
+  .track{display:block;width:42px;height:23px;background:rgba(255,255,255,.12);border-radius:999px;position:relative;transition:background .2s var(--ease);border:1px solid rgba(193,187,170,.25);flex:none;}
+  .track::after{content:"";position:absolute;top:2px;left:2px;width:17px;height:17px;background:var(--bone);border-radius:50%;transition:transform .2s var(--ease),background .2s var(--ease);}
+  .switch.on .track{background:var(--gold);}
+  .switch.on .track::after{transform:translateX(19px);background:#fff;}
+  .switch.on span{color:#fff;}
+
+  /* sub-opción: tinte de fondo + borde completo, NO franja lateral */
+  .sub-opt{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 12px;margin:2px 0 8px;background:rgba(221,161,27,.12);border:1px solid rgba(221,161,27,.28);border-radius:8px;}
+  .sub-opt span{font-family:'Archivo';font-size:11px;color:var(--bone);}
+  .mini-switch{cursor:pointer;background:none;border:none;padding:0;display:flex;}
+  .mini-track{display:block;width:32px;height:18px;background:rgba(255,255,255,.12);border-radius:999px;position:relative;border:1px solid rgba(193,187,170,.25);transition:background .2s var(--ease);flex:none;}
+  .mini-track::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;background:var(--bone);border-radius:50%;transition:transform .2s var(--ease),background .2s var(--ease);}
+  .mini-switch.on .mini-track{background:var(--gold);}
+  .mini-switch.on .mini-track::after{transform:translateX(14px);background:#fff;}
+
+  details.adv{margin-top:14px;border:1px solid rgba(193,187,170,.28);border-radius:8px;overflow:hidden;}
+  details.adv summary{font-family:'IBM Plex Mono';font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#fff;cursor:pointer;padding:12px 14px;list-style:none;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);}
+  details.adv summary::-webkit-details-marker{display:none;}
+  details.adv summary .gear{color:var(--gold);}
+  details.adv summary .chev{margin-left:auto;color:var(--gold);transition:transform .2s var(--ease);}
+  details.adv[open] summary .chev{transform:rotate(180deg);}
+  .adv-grid{display:grid;grid-template-columns:1fr 80px;gap:8px 10px;align-items:center;padding:13px 14px 15px;}
+  .adv-grid label{font-family:'Archivo';font-size:11px;color:var(--bone);opacity:.9;}
+  .adv-grid input{background:rgba(255,255,255,.06);border:1px solid rgba(193,187,170,.28);color:#fff;font-family:'IBM Plex Mono';font-size:11.5px;padding:6px 8px;border-radius:5px;outline:none;text-align:right;transition:border-color .16s var(--ease);}
+  .adv-grid input:focus{border-color:var(--gold);}
+  .adv-grid .gsep{grid-column:1/-1;border-top:1px dashed rgba(193,187,170,.22);margin:3px 0;}
+
+  .panel-actions{display:flex;gap:8px;margin-top:18px;}
+  .pdf-btn{flex:1;font-family:'IBM Plex Mono';font-weight:600;font-size:12px;letter-spacing:.05em;text-transform:uppercase;background:var(--gold);color:var(--teal);border:none;border-radius:999px;cursor:pointer;transition:background .16s var(--ease);}
+  .pdf-btn:hover{background:#c9920f;}
+
+  /* ===================== PREVIEW / DOCUMENT ===================== */
+  .preview{padding:32px;display:flex;justify-content:center;align-items:flex-start;overflow-x:auto;}
+  .sheet{position:relative;width:8.5in;min-width:8.5in;background:transparent;}
+  .content{padding:0;display:flex;flex-direction:column;gap:26px;}
+  /* cada hoja es una página real: misma proporción carta, ancla su contenido al pie */
+  .page1,.page2{background:var(--paper);box-shadow:0 24px 60px -28px rgba(19,47,51,.5);min-height:11in;padding:0.6in 0.8in;display:flex;flex-direction:column;}
+  .page1 #total-block{margin-top:auto;}     /* el total siempre aterriza al pie de la hoja 1 */
+  .page2 .foot{margin-top:auto;}            /* el pie de página siempre al fondo de la hoja 2 */
+
+  .content{padding:0;}
+
+  .head{display:flex;justify-content:space-between;align-items:flex-start;gap:30px;}
+  /* wordmark en teal sobre papel: legible y con peso, no dorado lavado */
+  .brand .wm{font-family:'Anton';font-size:42px;line-height:.9;color:var(--ink);letter-spacing:.03em;text-transform:uppercase;}
+  .brand .wm .g{color:var(--gold-ink);}
+  .brand .tag{font-family:'IBM Plex Mono';font-size:9px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold-ink);margin-top:11px;}
+  .docmeta{text-align:right;min-width:2.7in;}
+  .docmeta .coti{font-family:'IBM Plex Mono';font-weight:500;font-size:14px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink);}
+  .docmeta .dpt{font-family:'IBM Plex Mono';font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gray);margin-top:7px;}
+  .docmeta .ml{font-family:'IBM Plex Mono';font-size:11px;color:var(--ink);margin-top:8px;font-variant-numeric:tabular-nums;}
+  .docmeta .ml .lbl{color:var(--gray-2);margin-right:8px;}
+
+  .parties{display:grid;grid-template-columns:1fr 1fr;gap:38px;margin-top:30px;padding-bottom:20px;border-bottom:1px solid var(--line-2);}
+  .party + .party{border-left:1px solid var(--line-2);padding-left:38px;}
+  /* labels de parte en gris (no dorado): distingue de los headers de sección */
+  .party .lbl{font-family:'Archivo';font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--gray);}
+  .party .nm{font-family:'Archivo';font-weight:600;font-size:20px;line-height:1.15;color:var(--ink);margin-top:9px;letter-spacing:-.01em;text-wrap:balance;}
+  .party .sub{font-size:12px;color:var(--gray);margin-top:6px;}
+
+  /* pull-quote: ancla tipográfica entre encabezado y servicios */
+  .statement{font-family:'Archivo';font-weight:500;font-size:21px;line-height:1.42;color:var(--ink);max-width:5.3in;margin:30px 0 34px;padding-top:18px;text-wrap:pretty;position:relative;}
+  .statement::before{content:"";position:absolute;top:0;left:0;width:42px;height:2px;background:var(--gold-ink);}
+
+  /* header de sección dorado-tinta: el ÚNICO tratamiento dorado-mono del documento */
+  .sec-h{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1.5px solid var(--ink);padding-bottom:6px;}
+  .sec-h .st{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-ink);}
+  .sec-h .sm{font-family:'IBM Plex Mono';font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-2);}
+
+  .svc{display:flex;align-items:flex-start;gap:16px;padding:13px 0;border-bottom:1px solid var(--line);}
+  .svc:last-child{border-bottom:none;}
+  /* tag de disciplina: lenguaje de un set de planos */
+  .svc-n{font-family:'IBM Plex Mono';font-size:9.5px;font-weight:600;letter-spacing:.08em;color:var(--teal);background:rgba(19,47,51,.06);border-radius:4px;padding:4px 0;width:42px;text-align:center;flex:none;margin-top:2px;}
+  .svc-body{flex:1;}
+  .svc-title{font-family:'Archivo';font-weight:600;font-size:15px;line-height:1.3;color:var(--ink);}
+  .svc-cap{display:block;font-family:'Archivo';font-size:10.5px;color:var(--gray);margin-top:3px;max-width:4.2in;line-height:1.4;text-wrap:pretty;}
+  .svc-price{font-family:'IBM Plex Mono';font-weight:500;font-size:13.5px;color:var(--ink);white-space:nowrap;margin-top:3px;font-variant-numeric:tabular-nums;}
+  .svc-rows{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line-2);}
+  .svc-rows .rl{display:flex;justify-content:space-between;font-family:'IBM Plex Mono';font-size:10.5px;color:var(--gray);padding:3px 0;font-variant-numeric:tabular-nums;}
+  .svc-rows .rl b{color:var(--ink);font-weight:500;}
+
+  .total-pre{display:flex;flex-direction:column;align-items:flex-end;gap:5px;margin-top:16px;}
+  .total-pre .tp{display:flex;gap:26px;font-family:'IBM Plex Mono';font-size:11.5px;color:var(--gray);font-variant-numeric:tabular-nums;}
+  .total-pre .tp b{color:var(--ink);font-weight:500;min-width:1.5in;text-align:right;}
+  /* el total aterriza: bloque tonal teal con aire propio */
+  .total{display:flex;justify-content:space-between;align-items:flex-end;margin-top:22px;padding:18px 20px 20px;background:rgba(19,47,51,.05);border:1px solid var(--line-2);border-radius:12px;}
+  .total .tl{font-family:'IBM Plex Mono';font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-ink);}
+  .total .tn{font-family:'Archivo';font-size:11px;color:var(--gray);margin-top:5px;}
+  .total .amt{font-family:'Anton';font-size:48px;line-height:.82;color:var(--ink);letter-spacing:.01em;font-variant-numeric:tabular-nums;}
+  .total .amt .cur{color:var(--gold-ink);font-size:23px;vertical-align:top;margin-right:5px;}
+
+  .deliv{display:grid;grid-template-columns:1fr 1fr;gap:9px 32px;margin-top:14px;}
+  .d-item{display:flex;align-items:baseline;gap:10px;font-size:12.5px;color:var(--ink);}
+  .d-item .mk{color:var(--gold-ink);font-weight:700;font-size:12px;flex:none;}
+  /* nota: tinte de fondo + borde completo, sin franja lateral */
+  .deliv-note{font-size:10.5px;color:var(--gray);line-height:1.55;margin-top:14px;max-width:6in;background:rgba(221,161,27,.07);border:1px solid rgba(221,161,27,.22);border-radius:10px;padding:11px 14px;text-wrap:pretty;}
+
+  .closing{font-family:'Archivo';font-weight:600;font-size:15px;color:var(--ink);margin:26px 0 0;max-width:5.4in;text-wrap:balance;}
+
+  /* bloque de aceptación: cierra y vuelve accionable la página */
+  .accept{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:32px;}
+  .sig-line{border-bottom:1px solid var(--ink);height:32px;}
+  .sig-lbl{font-family:'IBM Plex Mono';font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gray);margin-top:7px;}
+
+  .foot{margin-top:24px;border-top:1px solid var(--line-2);padding:14px 0 0.5in;display:flex;justify-content:space-between;align-items:baseline;}
+  .foot .fw{font-family:'Anton';font-size:18px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink);}
+  .foot .fc{font-family:'IBM Plex Mono';font-size:9.5px;color:var(--gray);text-align:right;line-height:1.7;}
+
+  /* referencia daga en el título de servicio (apunta a Condiciones) */
+  .svc-title .dag{color:var(--gold-ink);font-weight:600;}
+
+  /* proceso: 4 etapas — secuencia real, por eso los números ganan su lugar */
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:15px;}
+  .step-c{position:relative;padding-right:18px;}
+  .step-c:not(:last-child)::after{content:"\2192";position:absolute;right:5px;top:0;color:var(--gold);font-size:14px;}
+  .step-c .sn{font-family:'IBM Plex Mono';font-size:11px;color:var(--gold-ink);font-weight:600;}
+  .step-c .ttl{font-family:'Archivo';font-size:13px;font-weight:600;color:var(--ink);margin-top:6px;letter-spacing:-.005em;}
+  .step-c .sd{font-size:10.5px;color:var(--gray);margin-top:3px;line-height:1.4;text-wrap:pretty;}
+
+  /* condiciones: pago + alcance + normativa + validez */
+  .conds{display:grid;grid-template-columns:1fr 1fr;gap:18px 32px;margin-top:15px;}
+  .cond .ct{font-family:'IBM Plex Mono';font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gray-2);margin-bottom:7px;}
+  .cond .ct .ph{color:var(--gold-ink);}
+  .cond .cb{font-size:12px;line-height:1.55;color:var(--gray);text-wrap:pretty;}
+  .cond .cb strong{color:var(--ink);font-weight:600;}
+  .pay .pstep{display:flex;justify-content:space-between;font-size:12px;color:var(--gray);padding:6px 0;border-bottom:1px dashed var(--line-2);}
+  .pay .pstep:last-child{border-bottom:none;}
+  .pay .pstep b{font-family:'IBM Plex Mono';color:var(--ink);font-weight:600;}
+
+  /* campos editables in-situ: invisibles en reposo, marcados al pasar/enfocar */
+  [contenteditable="true"]{outline:none;border-radius:3px;cursor:text;transition:background .14s var(--ease),box-shadow .14s var(--ease);}
+  [contenteditable="true"]:hover{background:rgba(221,161,27,.10);box-shadow:0 0 0 2px rgba(221,161,27,.20);}
+  [contenteditable="true"]:focus{background:rgba(221,161,27,.16);box-shadow:0 0 0 2px var(--gold);}
+
+  /* listas reordenables del panel (servicios y proceso) */
+  .hint{font-family:'Archivo';font-size:10px;color:var(--bone);opacity:.55;margin:-4px 0 10px;line-height:1.4;}
+  .ctl-row{display:flex;align-items:center;gap:8px;margin:1px 0;}
+  .ctl-row .switch{flex:1;min-width:0;padding:5px 0;}
+  .ctl-row .switch span:not(.track){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .reorder{display:flex;flex-direction:column;gap:2px;flex:none;}
+  .reorder button{width:22px;height:13px;display:grid;place-items:center;border:1px solid rgba(193,187,170,.28);background:rgba(255,255,255,.05);color:var(--bone);border-radius:3px;cursor:pointer;font-size:8px;line-height:1;padding:0;transition:background .14s var(--ease),color .14s var(--ease),border-color .14s var(--ease);}
+  .reorder button:hover:not(:disabled){background:var(--gold);color:var(--teal);border-color:var(--gold);}
+  .reorder button:disabled{opacity:.28;cursor:default;}
+
+  .empty{padding:30px 0;text-align:center;color:var(--gray);font-size:13px;font-style:italic;}
+
+  @media (max-width:900px){
+    .app{grid-template-columns:1fr;}
+    .panel{position:static;height:auto;}
+  }
+
+  /* motion reducido: no opcional */
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{transition:none !important;animation:none !important;}
+  }
+
+  @media print{
+    @page{size:letter;margin:0;}
+    html,body{background:#fff;margin:0;}
+    .app{display:block;}
+    .panel{display:none !important;}
+    .preview{padding:0;overflow:visible;display:block;}
+    .sheet{box-shadow:none;width:100%;min-width:0;}
+    .content{padding:0;gap:0;}
+    .page1,.page2{box-shadow:none;min-height:100vh;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .page1{padding:0.55in 0.8in 0.5in;}
+    .page2{break-before:page;padding:0.62in 0.8in 0.5in;}
+    .svc-rows{display:none !important;}   /* la copia del cliente nunca muestra el cálculo */
+    [contenteditable="true"]{background:none !important;box-shadow:none !important;}
+  }
+
+  /* ====== APP SHELL: login / topbar / dashboard ====== */
+  #login-view{position:fixed;inset:0;background:var(--teal);display:flex;align-items:center;justify-content:center;padding:24px;z-index:500;}
+  .login-card{background:var(--paper);border-radius:16px;padding:30px 26px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.35);}
+  .login-card .lc-brand{font-family:'Anton';font-size:30px;text-transform:uppercase;color:var(--ink);letter-spacing:.03em;}
+  .login-card .lc-brand .g{color:var(--gold-ink);}
+  .login-card .lc-sub{font-family:'IBM Plex Mono';font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-ink);margin:6px 0 22px;}
+  .login-card label{display:block;font-size:12px;font-weight:600;color:var(--ink);margin:12px 0 5px;}
+  .login-card input{width:100%;border:1px solid var(--line-2);border-radius:8px;padding:11px 12px;font-family:'IBM Plex Mono';font-size:14px;background:#fff;color:var(--ink);}
+  .login-card input:focus{outline:none;border-color:var(--gold);}
+  .login-card .lbtn{width:100%;margin-top:18px;background:var(--gold);color:var(--teal);border:none;border-radius:999px;padding:12px;font-family:'IBM Plex Mono';font-weight:600;font-size:13px;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;}
+  .login-card .lc-msg{font-size:12px;color:#b00;margin-top:12px;min-height:16px;text-align:center;}
+
+  #topbar{position:sticky;top:0;z-index:300;background:var(--teal);color:var(--bone);display:flex;align-items:center;gap:12px;padding:10px 16px;flex-wrap:wrap;}
+  #topbar .tb-brand{font-family:'Anton';font-size:17px;text-transform:uppercase;color:var(--gold);letter-spacing:.03em;}
+  #topbar .tb-nav{display:flex;gap:4px;background:rgba(255,255,255,.08);border-radius:999px;padding:3px;}
+  #topbar .tb-nav button{font-family:'IBM Plex Mono';font-size:12px;font-weight:600;border:none;background:transparent;color:var(--bone);padding:6px 14px;border-radius:999px;cursor:pointer;}
+  #topbar .tb-nav button.active{background:var(--gold);color:var(--teal);}
+  #topbar .tb-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+  #topbar .tb-user{font-family:'IBM Plex Mono';font-size:10px;color:var(--bone);opacity:.7;}
+  #topbar .tb-logout{font-family:'IBM Plex Mono';font-size:11px;background:none;border:1px solid rgba(193,187,170,.3);color:var(--bone);border-radius:6px;padding:5px 10px;cursor:pointer;}
+
+  #cotizador-view .panel{top:54px;height:calc(100vh - 54px);}
+
+  #dashboard-view{padding:20px 16px 60px;max-width:760px;margin:0 auto;}
+  .dash-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .dash-head h1{font-family:'Anton';font-size:24px;text-transform:uppercase;color:var(--ink);letter-spacing:.02em;}
+  .dash-new{background:var(--gold);color:var(--teal);border:none;border-radius:999px;padding:10px 16px;font-family:'IBM Plex Mono';font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;}
+  .dash-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+  .dash-filters button{font-family:'IBM Plex Mono';font-size:11px;border:1px solid var(--line-2);background:var(--paper);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer;}
+  .dash-filters button.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .dash-empty{text-align:center;color:#6b6657;font-size:13px;padding:40px 0;font-style:italic;}
+  .dash-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:border-color .15s,transform .1s;font:inherit;}
+  .dash-row:hover{border-color:var(--gold);}
+  .dash-row:active{transform:scale(.995);}
+  .dr-main{flex:1;min-width:0;}
+  .dr-top{display:flex;align-items:center;gap:9px;}
+  .dr-num{font-family:'IBM Plex Mono';font-size:12px;font-weight:600;color:var(--ink);}
+  .dr-cli{font-family:'Archivo';font-weight:600;font-size:15px;color:var(--ink);margin-top:3px;}
+  .dr-proy{font-size:11.5px;color:#6b6657;margin-top:2px;}
+  .dr-flags{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;}
+  .flag{font-family:'IBM Plex Mono';font-size:9px;text-transform:uppercase;letter-spacing:.06em;background:rgba(19,47,51,.08);color:var(--ink);padding:3px 7px;border-radius:5px;}
+  .flag.warn{background:rgba(221,161,27,.20);color:var(--gold-ink);}
+  .dr-total{font-family:'IBM Plex Mono';font-weight:600;font-size:15px;color:var(--ink);white-space:nowrap;}
+  .badge{font-family:'IBM Plex Mono';font-size:9px;text-transform:uppercase;letter-spacing:.06em;padding:3px 8px;border-radius:999px;font-weight:600;}
+  .b-borrador{background:#e6e2d7;color:#6b6657;}
+  .b-enviada{background:rgba(19,47,51,.14);color:var(--teal);}
+  .b-aceptada{background:rgba(46,125,50,.18);color:#2e7d32;}
+  .b-vencida{background:rgba(176,0,0,.14);color:#b00020;}
+
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-family:'IBM Plex Mono';font-size:12.5px;padding:11px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:600;max-width:90%;text-align:center;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast.err{background:#8a1c1c;}
+
+  .cli-pick{display:flex;gap:6px;}
+  .cli-pick select{flex:1;min-width:0;background:rgba(255,255,255,.06);border:1px solid rgba(193,187,170,.28);color:#fff;font-family:'IBM Plex Mono';font-size:12px;padding:8px 9px;border-radius:5px;}
+  .cli-pick .add{flex:none;width:34px;border:1px solid rgba(193,187,170,.3);background:rgba(255,255,255,.05);color:var(--bone);border-radius:5px;font-size:18px;line-height:1;cursor:pointer;}
+  .cli-pick .add:hover{background:var(--gold);color:var(--teal);border-color:var(--gold);}
+  .ghost-btn{background:none;border:1px solid rgba(193,187,170,.3);color:var(--bone);font-family:'IBM Plex Mono';font-size:11px;border-radius:999px;padding:8px;cursor:pointer;width:100%;margin-top:6px;}
+  #estadoSeg{flex-wrap:wrap;}
+  #btn-guardar{width:100%;margin-top:8px;padding:11px;border-radius:999px;}
+</style>
+</head>
+<body>
+
+<!-- ====== LOGIN ====== -->
+<div id="login-view">
+  <div class="login-card">
+    <div class="lc-brand"><span class="g">Laios</span> Group</div>
+    <div class="lc-sub">Cotizador · acceso</div>
+    <label for="login-email">Correo</label>
+    <input id="login-email" type="email" autocomplete="username" placeholder="tucorreo@ejemplo.com">
+    <label for="login-pass">Contraseña</label>
+    <input id="login-pass" type="password" autocomplete="current-password" placeholder="••••••••">
+    <button class="lbtn" id="login-btn">Entrar</button>
+    <div class="lc-msg" id="login-msg"></div>
+  </div>
+</div>
+
+<!-- ====== APP ====== -->
+<div id="app-view" style="display:none">
+  <header id="topbar">
+    <span class="tb-brand">Laios</span>
+    <div class="tb-nav">
+      <button id="nav-dash" class="active">Dashboard</button>
+      <button id="nav-cot">Cotizador</button>
+    </div>
+    <div class="tb-right">
+      <span class="tb-user" id="user-email"></span>
+      <button class="tb-logout" id="logout-btn">Salir</button>
+    </div>
+  </header>
+
+  <!-- DASHBOARD -->
+  <section id="dashboard-view">
+    <div class="dash-head">
+      <h1>Cotizaciones</h1>
+      <button class="dash-new" id="btn-nueva">+ Nueva</button>
+    </div>
+    <div class="dash-filters" id="dash-filters">
+      <button class="active" data-f="todas">Todas</button>
+      <button data-f="borrador">Borrador</button>
+      <button data-f="enviada">Enviada</button>
+      <button data-f="aceptada">Aceptada</button>
+      <button data-f="vencida">Vencida</button>
+    </div>
+    <div id="dash-list"></div>
+  </section>
+
+  <!-- COTIZADOR -->
+  <section id="cotizador-view" style="display:none">
+<div class="app">
+
+  <!-- ============ CONTROL PANEL ============ -->
+  <aside class="panel">
+    <div class="pbrand">Laios Group</div>
+    <div class="ptag">Cotizador de diseño y planos</div>
+    <hr>
+
+    <div class="field">
+      <label for="cliente-sel">Cliente</label>
+      <div class="cli-pick">
+        <select id="cliente-sel"><option value="">— Selecciona —</option></select>
+        <button type="button" class="add" id="btn-nuevo-cliente" title="Nuevo cliente">+</button>
+      </div>
+      <input type="hidden" id="i-cliente" value="">
+    </div>
+    <div class="field"><label for="i-proyecto">Proyecto</label><input type="text" id="i-proyecto" value="Edificio de apartamentos"></div>
+    <div class="field"><label for="i-ubic">Ubicación</label><input type="text" id="i-ubic" value="Gurabo, Santiago"></div>
+
+    <hr>
+
+    <div class="field">
+      <span class="lh-l" id="lvl-label" style="display:block;margin-bottom:6px;">Número de niveles</span>
+      <div class="stepper" role="group" aria-labelledby="lvl-label">
+        <button type="button" id="lvl-minus" aria-label="Quitar un nivel">–</button>
+        <div class="nval" id="lvl-count" aria-live="polite">3</div>
+        <button type="button" id="lvl-plus" aria-label="Agregar un nivel">+</button>
+      </div>
+    </div>
+
+    <div class="levels-head">
+      <span class="lh-l">Metraje</span>
+      <div class="seg seg-sm" id="metMode" role="group" aria-label="Modo de metraje"><button type="button" class="active" data-m="uniforme" aria-pressed="true">Uniforme</button><button type="button" data-m="nivel" aria-pressed="false">Por nivel</button></div>
+    </div>
+    <div class="field" id="met-uniforme"><label for="i-area-uniforme" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Metraje por nivel en m²</label><input type="number" id="i-area-uniforme" value="320"></div>
+    <div id="met-nivel" style="display:none"><div id="lvl-inputs"></div></div>
+
+    <hr>
+
+    <div class="sec-label">Servicios a cotizar</div>
+    <div class="hint">Activa los que apliquen y ordénalos con ▲▼. El orden se refleja en el PDF.</div>
+    <div id="svc-list"></div>
+
+    <hr>
+
+    <div class="sec-label">Proceso</div>
+    <div class="hint">Activa y ordena las etapas con ▲▼. El texto se edita directo en la hoja.</div>
+    <div id="proc-list"></div>
+
+    <hr>
+
+    <div class="sec-label">Opciones</div>
+    <button type="button" class="switch" id="sw-itbis" role="switch" aria-checked="false"><span>Aplicar ITBIS (18%)</span><span class="track"></span></button>
+    <button type="button" class="switch" id="sw-detail" role="switch" aria-checked="false"><span>Ver desglose (interno)</span><span class="track"></span></button>
+
+    <details class="adv">
+      <summary><span class="gear" aria-hidden="true">⚙</span> Ajustar precios <span class="chev" aria-hidden="true">▾</span></summary>
+      <div class="adv-grid">
+        <label for="r-base">Tarifa base /m² (N1)</label><input type="number" id="r-base" value="500">
+        <label for="r-f2">Factor N2 (%)</label><input type="number" id="r-f2" value="50">
+        <label for="r-f3">Factor N3+ (%)</label><input type="number" id="r-f3" value="25">
+        <div class="gsep"></div>
+        <label for="r-est">Estructural /m²</label><input type="number" id="r-est" value="100">
+        <label for="r-estfix">Planos estruct. (fijo)</label><input type="number" id="r-estfix" value="5000">
+        <label for="r-pool">Recargo piscina</label><input type="number" id="r-pool" value="5000">
+        <div class="gsep"></div>
+        <label for="r-elec">Eléctrico /m²</label><input type="number" id="r-elec" value="50">
+        <label for="r-san">Sanitario /m²</label><input type="number" id="r-san" value="50">
+        <label for="r-pap">Papelería (fijo)</label><input type="number" id="r-pap" value="10000">
+        <label for="r-tram">Tramitación (fijo)</label><input type="number" id="r-tram" value="25000">
+        <div class="gsep"></div>
+        <label for="r-levarq">Levant. arq. (fijo)</label><input type="number" id="r-levarq" value="15000">
+        <label for="r-levest">Levant. estruct. (fijo)</label><input type="number" id="r-levest" value="12000">
+        <div class="gsep"></div>
+        <label for="r-rate">Tasa USD</label><input type="number" id="r-rate" value="61">
+      </div>
+    </details>
+
+    <hr>
+    <div class="sec-label">Guardar en la nube</div>
+    <div class="field">
+      <label style="display:block;margin-bottom:6px;">Estado</label>
+      <div class="seg seg-sm" id="estadoSeg" role="group" aria-label="Estado">
+        <button type="button" data-e="borrador" class="active">Borrador</button>
+        <button type="button" data-e="enviada">Enviada</button>
+        <button type="button" data-e="aceptada">Aceptada</button>
+        <button type="button" data-e="vencida">Vencida</button>
+      </div>
+    </div>
+    <button type="button" class="pdf-btn" id="btn-guardar">Guardar cotización</button>
+    <button type="button" class="ghost-btn" id="btn-tarifas">Guardar tarifas base</button>
+
+    <div class="panel-actions">
+      <div class="seg" id="curSeg" role="group" aria-label="Moneda"><button type="button" class="active" data-cur="RD" aria-pressed="true">RD$</button><button type="button" data-cur="USD" aria-pressed="false">USD</button></div>
+      <button type="button" class="pdf-btn" onclick="window.print()">PDF</button>
+    </div>
+  </aside>
+
+  <!-- ============ LIVE DOCUMENT ============ -->
+  <main class="preview">
+    <div class="sheet">
+
+      <div class="content">
+
+        <div class="page1">
+        <header class="head">
+          <div class="brand">
+            <div class="wm"><span class="g">Laios</span> Group</div>
+            <div class="tag">Diseño · Desarrollo · Construcción</div>
+          </div>
+          <div class="docmeta">
+            <div class="coti">Cotización</div>
+            <div class="dpt">Diseño y planos técnicos</div>
+            <div class="ml"><span class="lbl">N.º</span><span id="doc-numero">(sin guardar)</span></div>
+            <div class="ml"><span class="lbl">Fecha</span><span id="doc-fecha">20 jun 2026</span></div>
+            <div class="ml"><span class="lbl">Válida</span>15 días</div>
+          </div>
+        </header>
+
+        <section class="parties">
+          <div class="party">
+            <div class="lbl">Cliente</div>
+            <div class="nm" id="d-cliente">—</div>
+            <div class="sub">Propuesta de servicios profesionales</div>
+          </div>
+          <div class="party">
+            <div class="lbl">Proyecto</div>
+            <div class="nm" id="d-proyecto">—</div>
+            <div class="sub" id="d-proy-detail">—</div>
+          </div>
+        </section>
+
+        <div class="sec-h"><span class="st">Servicios</span><span class="sm" id="svc-count">—</span></div>
+        <section id="lines"></section>
+
+        <div id="total-block"></div>
+        </div><!-- /page1 -->
+
+        <div class="page2">
+        <div class="sec-h" style="margin-top:0;"><span class="st">Entregables</span><span class="sm">Todo incluido</span></div>
+        <div class="deliv" id="entregables"></div>
+
+        <div class="sec-h" style="margin-top:24px;"><span class="st">Proceso</span><span class="sm" id="proc-count">4 etapas</span></div>
+        <div class="flow" id="flow"></div>
+
+        <div class="sec-h" style="margin-top:24px;"><span class="st">Condiciones</span><span class="sm">Pago · Alcance</span></div>
+        <div class="conds">
+          <div class="cond">
+            <div class="ct">Forma de pago</div>
+            <div class="pay">
+              <div class="pstep"><span contenteditable="true" spellcheck="false">Anticipo para iniciar</span><b contenteditable="true" spellcheck="false">50%</b></div>
+              <div class="pstep"><span contenteditable="true" spellcheck="false">Anteproyecto aprobado</span><b contenteditable="true" spellcheck="false">30%</b></div>
+              <div class="pstep"><span contenteditable="true" spellcheck="false">Entrega de planos sellados</span><b contenteditable="true" spellcheck="false">20%</b></div>
+            </div>
+          </div>
+          <div class="cond">
+            <div class="ct">Alcance y exclusiones</div>
+            <div class="cb"><strong>Tramitación:</strong> cubre solo la gestión del proceso. No incluye impuestos ni tasas oficiales, que se liquidan ante las instituciones durante el trámite.<br><br><strong>No incluye:</strong> estudios de suelo, levantamiento topográfico, ni permisos ante instituciones distintas al Ayuntamiento, salvo acuerdo aparte.</div>
+          </div>
+          <div class="cond">
+            <div class="ct">Normativa</div>
+            <div class="cb">Cada plano se entrega conforme a la normativa vigente <strong>(R-021 / MOPC)</strong>, listo para tramitar permisos sin retrabajos. Todo lo anterior está incluido en el total; no se factura ningún cargo por separado.</div>
+          </div>
+          <div class="cond">
+            <div class="ct">Validez</div>
+            <div class="cb">Esta propuesta es válida por <strong>15 días</strong> desde la fecha de emisión.</div>
+          </div>
+        </div>
+
+        <p class="closing">Aprobada esta propuesta, iniciamos de inmediato con el levantamiento y el anteproyecto.</p>
+
+        <div class="accept">
+          <div><div class="sig-line"></div><div class="sig-lbl">Aprobado por · Cliente</div></div>
+          <div><div class="sig-line"></div><div class="sig-lbl">Fecha</div></div>
+        </div>
+
+        <div class="foot">
+          <div class="fw">Laios Group</div>
+          <div class="fc">849-245-1522 · laiosgroup.info@gmail.com<br>laiosgroup.com · Sosúa, Puerto Plata</div>
+        </div>
+        </div><!-- /page2 -->
+
+      </div>
+    </div>
+  </main>
+</div>
+  </section><!-- /cotizador-view -->
+</div><!-- /app-view -->
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const state = {
+    niveles:3, metrajeMode:'uniforme', areaUniforme:320, areas:[320,320,320],
+    piscina:true, itbis:false, showDetail:false, cur:'RD',
+    serviceOrder:['levarq','arq','levest','est','elec','san','pap','tram'],
+    services:{levarq:false,arq:true,levest:false,est:true,elec:true,san:true,pap:true,tram:false},
+    process:[
+      {title:'Levantamiento', desc:'Medición y registro del sitio', on:true},
+      {title:'Anteproyecto', desc:'Propuesta de diseño a aprobar', on:true},
+      {title:'Planos técnicos', desc:'Juego completo sellado', on:true},
+      {title:'Tramitación', desc:'Gestión ante el Ayuntamiento', on:true}
+    ]
+  };
+  const $ = id => document.getElementById(id);
+  const num = id => parseFloat($(id).value)||0;
+  const setSwitch = (el,on)=>{ el.classList.toggle('on',on); el.setAttribute('aria-checked', on?'true':'false'); };
+
+  function rates(){
+    return { base:num('r-base'), f2:num('r-f2')/100, f3:num('r-f3')/100,
+      est:num('r-est'), estfix:num('r-estfix'), pool:num('r-pool'),
+      elec:num('r-elec'), san:num('r-san'), pap:num('r-pap'), tram:num('r-tram'),
+      levarq:num('r-levarq'), levest:num('r-levest'), rate:num('r-rate') };
+  }
+  const tierRate=(lvl,r)=> lvl===1?r.base : lvl===2?r.base*r.f2 : r.base*r.f3;
+  const getArea=i=> state.metrajeMode==='uniforme'?state.areaUniforme:(state.areas[i]||0);
+  const sym=()=> state.cur==='USD'?'$':'RD$';
+  function fmtNum(n){
+    const v=state.cur==='USD'?n/rates().rate:n;
+    const d=state.cur==='USD'?2:0;
+    return v.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+  }
+  const fmt=n=> sym()+' '+fmtNum(n);
+  function ppm(rate,r){ const v=state.cur==='USD'?rate/r.rate:rate; return sym()+v.toLocaleString('en-US',{maximumFractionDigits:2}); }
+
+  function buildLevelInputs(){
+    const wrap=$('lvl-inputs'); wrap.innerHTML='';
+    const r=rates();
+    for(let i=0;i<state.niveles;i++){
+      if(state.areas[i]===undefined) state.areas[i]=state.areaUniforme;
+      const lvl=i+1, pct=lvl===1?'100%':(lvl===2?(r.f2*100)+'%':(r.f3*100)+'%');
+      const row=document.createElement('div');
+      row.className='lvl-row';
+      const inId='lvl-in-'+lvl;
+      row.innerHTML=`<label class="ln" for="${inId}">Nivel ${lvl}</label><input id="${inId}" type="number" value="${state.areas[i]}"><span class="tier">${pct}</span>`;
+      row.querySelector('input').addEventListener('input',e=>{state.areas[i]=parseFloat(e.target.value)||0;render();});
+      wrap.appendChild(row);
+    }
+  }
+
+  function render(){
+    const r=rates();
+    $('d-cliente').textContent=$('i-cliente').value||'—';
+    $('d-proyecto').textContent=$('i-proyecto').value||'—';
+    let totalM2=0; for(let i=0;i<state.niveles;i++) totalM2+=getArea(i);
+    $('d-proy-detail').textContent=`${state.niveles} niveles · ${totalM2.toLocaleString('en-US')} m² totales · ${$('i-ubic').value||''}`;
+
+    // services
+    let arqSub=0, arqRows='';
+    for(let i=0;i<state.niveles;i++){
+      const lvl=i+1, a=getArea(i), rate=tierRate(lvl,r), sub=a*rate; arqSub+=sub;
+      const pct=lvl===1?'':` (${lvl===2?r.f2*100:r.f3*100}%)`;
+      arqRows+=`<div class="rl"><span>Nivel ${lvl} · ${a.toLocaleString('en-US')} m² × ${ppm(rate,r)}${pct}</span><b>${fmt(sub)}</b></div>`;
+    }
+    const estBase=totalM2*r.est, estPool=state.piscina?r.pool:0, estSub=estBase+r.estfix+estPool;
+    let estRows=`<div class="rl"><span>Cálculo estructural · ${totalM2.toLocaleString('en-US')} m² × ${ppm(r.est,r)}</span><b>${fmt(estBase)}</b></div>`+
+      `<div class="rl"><span>Elaboración de planos</span><b>${fmt(r.estfix)}</b></div>`+
+      (state.piscina?`<div class="rl"><span>Recargo por piscina</span><b>${fmt(estPool)}</b></div>`:'');
+    const elecSub=totalM2*r.elec, sanSub=totalM2*r.san, papSub=r.pap, tramSub=r.tram;
+    const elecRows=`<div class="rl"><span>Cálculo eléctrico · ${totalM2.toLocaleString('en-US')} m² × ${ppm(r.elec,r)}</span><b>${fmt(elecSub)}</b></div>`;
+    const sanRows=`<div class="rl"><span>Cálculo sanitario · ${totalM2.toLocaleString('en-US')} m² × ${ppm(r.san,r)}</span><b>${fmt(sanSub)}</b></div>`;
+    const papRows=`<div class="rl"><span>Documentación, impresión y archivos finales</span><b>${fmt(papSub)}</b></div>`;
+    const tramRows=`<div class="rl"><span>Gestión de permisos ante Ayuntamiento e instituciones</span><b>${fmt(tramSub)}</b></div>`;
+
+    // mapa de partidas calculadas por clave
+    const computed = {
+      levarq:{code:'LA', title:'Levantamiento arquitectónico', sub:r.levarq,
+        rows:`<div class="rl"><span>Medición y digitalización del estado actual</span><b>${fmt(r.levarq)}</b></div>`,
+        deliv:['Levantamiento arquitectónico del estado actual']},
+      arq:{code:'ARQ', title:'Diseño y planos arquitectónicos', sub:arqSub, rows:arqRows,
+        deliv:['Diseño arquitectónico y juego de planos']},
+      levest:{code:'LE', title:'Levantamiento estructural', sub:r.levest,
+        rows:`<div class="rl"><span>Inspección y registro del sistema estructural existente</span><b>${fmt(r.levest)}</b></div>`,
+        deliv:['Levantamiento estructural del estado actual']},
+      est:{code:'EST', title:'Diseño y planos estructurales', sub:estSub, rows:estRows,
+        deliv:['Planos estructurales sellados']},
+      elec:{code:'ELE', title:'Diseño y planos eléctricos', sub:elecSub, rows:elecRows,
+        deliv:['Planos eléctricos']},
+      san:{code:'SAN', title:'Diseño y planos sanitarios', sub:sanSub, rows:sanRows,
+        deliv:['Planos sanitarios y pluviales']},
+      pap:{code:'DOC', title:'Papelería y entregables', sub:papSub, rows:papRows,
+        deliv:['Memoria y documentación técnica','Set impreso + archivos PDF/DWG']},
+      tram:{code:'TRA', title:'Tramitación de permisos', sub:tramSub, rows:tramRows,
+        deliv:['Gestión de permisos ante Ayuntamiento']}
+    };
+
+    const svc=(code,title,sub,rows,cap)=>`<div class="svc"><div class="svc-n">${code}</div><div class="svc-body"><div class="svc-title">${title}</div>${cap?`<span class="svc-cap">${cap}</span>`:''}${rows?`<div class="svc-rows">${rows}</div>`:''}</div><div class="svc-price">${fmt(sub)}</div></div>`;
+
+    let n=0, subtotal=0, html='', del='';
+    state.serviceOrder.forEach(key=>{
+      if(!state.services[key]) return;
+      const d=computed[key]; if(!d) return;
+      n++; subtotal+=d.sub;
+      html+=svc(d.code,d.title,d.sub, state.showDetail?d.rows:'', d.cap);
+      (d.deliv||[]).forEach(t=> del+=`<div class="d-item"><span class="mk" aria-hidden="true">✓</span><span>${t}</span></div>`);
+    });
+    $('lines').innerHTML = n? html : `<div class="empty">Selecciona al menos un servicio en el panel.</div>`;
+    $('svc-count').textContent = n? `${n} ${n===1?'partida':'partidas'}` : '—';
+    $('entregables').innerHTML = del || `<div class="empty" style="grid-column:1/-1">—</div>`;
+
+    const itbisAmt=state.itbis?subtotal*0.18:0, grand=subtotal+itbisAmt;
+    state.grandTotal = grand; state.subtotalVal = subtotal;
+    let tHTML='';
+    if(state.itbis){
+      tHTML+=`<div class="total-pre"><div class="tp"><span>Subtotal</span><b>${fmt(subtotal)}</b></div><div class="tp"><span>ITBIS (18%)</span><b>${fmt(itbisAmt)}</b></div></div>`;
+    }
+    tHTML+=`<div class="total"><div><div class="tl">Total</div><div class="tn">Inversión en diseño y planos técnicos</div></div><div class="amt"><span class="cur">${sym()}</span>${fmtNum(grand)}</div></div>`;
+    $('total-block').innerHTML=tHTML;
+
+    document.querySelectorAll('#lvl-inputs .lvl-row').forEach((row,i)=>{
+      const lvl=i+1; row.querySelector('.tier').textContent=lvl===1?'100%':(lvl===2?(r.f2*100)+'%':(r.f3*100)+'%');
+    });
+  }
+
+  // niveles
+  $('lvl-plus').addEventListener('click',()=>{if(state.niveles>=15)return;state.niveles++;if(state.areas[state.niveles-1]===undefined)state.areas[state.niveles-1]=state.areaUniforme;$('lvl-count').textContent=state.niveles;if(state.metrajeMode==='nivel')buildLevelInputs();render();});
+  $('lvl-minus').addEventListener('click',()=>{if(state.niveles<=1)return;state.niveles--;$('lvl-count').textContent=state.niveles;if(state.metrajeMode==='nivel')buildLevelInputs();render();});
+
+  // metraje mode
+  $('metMode').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state.metrajeMode=b.dataset.m;[...e.currentTarget.children].forEach(x=>{const on=x===b;x.classList.toggle('active',on);x.setAttribute('aria-pressed',on?'true':'false');});const uni=state.metrajeMode==='uniforme';$('met-uniforme').style.display=uni?'block':'none';$('met-nivel').style.display=uni?'none':'block';if(!uni){for(let i=0;i<state.niveles;i++)if(state.areas[i]===undefined)state.areas[i]=state.areaUniforme;buildLevelInputs();}render();});
+  $('i-area-uniforme').addEventListener('input',e=>{state.areaUniforme=parseFloat(e.target.value)||0;render();});
+
+  // ---- servicios y proceso: listas reordenables ----
+  const SVC_LABEL={levarq:'Levantamiento arquitectónico', arq:'Arquitectónico', levest:'Levantamiento estructural', est:'Estructural', elec:'Eléctrico', san:'Sanitario', pap:'Papelería y entregables', tram:'Tramitación de permisos'};
+  function move(arr,i,dir){ const j=i+dir; if(j<0||j>=arr.length) return false; const t=arr[i]; arr[i]=arr[j]; arr[j]=t; return true; }
+  function reorderBtns(){ return `<div class="reorder"><button type="button" class="up" aria-label="Subir">▲</button><button type="button" class="dn" aria-label="Bajar">▼</button></div>`; }
+
+  function renderPanelServices(){
+    const list=$('svc-list'); list.innerHTML='';
+    state.serviceOrder.forEach((key,idx)=>{
+      const on=!!state.services[key];
+      const row=document.createElement('div'); row.className='ctl-row'; row.dataset.key=key;
+      row.innerHTML=reorderBtns()+`<button type="button" class="switch svc-sw ${on?'on':''}" role="switch" aria-checked="${on}"><span>${SVC_LABEL[key]}</span><span class="track"></span></button>`;
+      const up=row.querySelector('.up'), dn=row.querySelector('.dn');
+      up.disabled=idx===0; dn.disabled=idx===state.serviceOrder.length-1;
+      up.addEventListener('click',()=>{ if(move(state.serviceOrder,idx,-1)){renderPanelServices();render();} });
+      dn.addEventListener('click',()=>{ if(move(state.serviceOrder,idx,1)){renderPanelServices();render();} });
+      row.querySelector('.svc-sw').addEventListener('click',e=>{
+        state.services[key]=!state.services[key]; setSwitch(e.currentTarget,state.services[key]);
+        const ps=document.getElementById('sub-piscina'); if(key==='est'&&ps) ps.style.display=state.services[key]?'flex':'none';
+        render();
+      });
+      list.appendChild(row);
+      if(key==='est'){
+        const po=document.createElement('div'); po.className='sub-opt'; po.id='sub-piscina'; po.style.display=on?'flex':'none';
+        po.innerHTML=`<span id="piscina-label">¿Incluye piscina?</span><button type="button" class="mini-switch ${state.piscina?'on':''}" id="sw-piscina" role="switch" aria-checked="${state.piscina}" aria-labelledby="piscina-label"><span class="mini-track"></span></button>`;
+        po.querySelector('#sw-piscina').addEventListener('click',e=>{ state.piscina=!state.piscina; setSwitch(e.currentTarget,state.piscina); render(); });
+        list.appendChild(po);
+      }
+    });
+  }
+
+  function renderPanelProcess(){
+    const list=$('proc-list'); list.innerHTML='';
+    state.process.forEach((s,idx)=>{
+      const row=document.createElement('div'); row.className='ctl-row proc-ctl'; row.dataset.i=idx;
+      row.innerHTML=reorderBtns()+`<button type="button" class="switch proc-sw ${s.on?'on':''}" role="switch" aria-checked="${s.on}"><span class="pl">${s.title||'—'}</span><span class="track"></span></button>`;
+      const up=row.querySelector('.up'), dn=row.querySelector('.dn');
+      up.disabled=idx===0; dn.disabled=idx===state.process.length-1;
+      up.addEventListener('click',()=>{ if(move(state.process,idx,-1)){renderPanelProcess();renderProcess();} });
+      dn.addEventListener('click',()=>{ if(move(state.process,idx,1)){renderPanelProcess();renderProcess();} });
+      row.querySelector('.proc-sw').addEventListener('click',e=>{ s.on=!s.on; setSwitch(e.currentTarget,s.on); renderProcess(); });
+      list.appendChild(row);
+    });
+  }
+
+  function renderProcess(){
+    const flow=$('flow'); flow.innerHTML=''; let num=0;
+    state.process.forEach((s,i)=>{
+      if(!s.on) return; num++;
+      const card=document.createElement('div'); card.className='step-c';
+      card.innerHTML=`<div class="sn">${String(num).padStart(2,'0')}</div>`+
+        `<div class="ttl" contenteditable="true" spellcheck="false" data-pi="${i}" data-f="title">${s.title}</div>`+
+        `<div class="sd" contenteditable="true" spellcheck="false" data-pi="${i}" data-f="desc">${s.desc}</div>`;
+      card.querySelectorAll('[contenteditable]').forEach(el=>{
+        el.addEventListener('input',()=>{ const pi=+el.dataset.pi, f=el.dataset.f; state.process[pi][f]=el.textContent;
+          if(f==='title'){ const lbl=document.querySelector(`.proc-ctl[data-i="${pi}"] .pl`); if(lbl) lbl.textContent=el.textContent||'—'; } });
+      });
+      flow.appendChild(card);
+    });
+    if(num===0) flow.innerHTML=`<div class="empty" style="grid-column:1/-1">Activa al menos una etapa en el panel.</div>`;
+    $('proc-count').textContent = num? `${num} ${num===1?'etapa':'etapas'}` : '—';
+  }
+
+  // option switches
+  $('sw-itbis').addEventListener('click',e=>{state.itbis=!state.itbis;setSwitch(e.currentTarget,state.itbis);render();});
+  $('sw-detail').addEventListener('click',e=>{state.showDetail=!state.showDetail;setSwitch(e.currentTarget,state.showDetail);render();});
+
+  // currency
+  $('curSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state.cur=b.dataset.cur;[...e.currentTarget.children].forEach(x=>{const on=x===b;x.classList.toggle('active',on);x.setAttribute('aria-pressed',on?'true':'false');});render();});
+
+  // text + rate inputs
+  ['i-cliente','i-proyecto','i-ubic','r-base','r-f2','r-f3','r-est','r-estfix','r-pool','r-elec','r-san','r-pap','r-tram','r-levarq','r-levest','r-rate']
+    .forEach(id=>$(id).addEventListener('input',()=>{if(state.metrajeMode==='nivel')buildLevelInputs();render();}));
+
+  buildLevelInputs();
+  renderPanelServices();
+  renderPanelProcess();
+  renderProcess();
+  render();
+
+  /* ===================== CAPA SUPABASE / APP ===================== */
+  const SB_URL = 'https://yfuhacfhgyzkkalullsm.supabase.co';
+  const SB_KEY = 'sb_publishable_a5nwd1UC6GAoH1FJ53u4Zw_KEy_10qx';
+  let sb = null;
+  try { sb = window.supabase.createClient(SB_URL, SB_KEY); }
+  catch(e){ console.error('Supabase no cargó:', e); }
+
+  let currentQuoteId = null, currentClienteId = null, currentEstado = 'borrador';
+  let clientesCache = [], dashData = [], dashFilter = 'todas';
+
+  function toast(msg, ok=true){ const t=$('toast'); t.textContent=msg; t.className='toast '+(ok?'':'err')+' show'; setTimeout(()=>t.classList.remove('show'),2800); }
+  const showEl=id=>$(id).style.display='', hideEl=id=>$(id).style.display='none';
+
+  function showLogin(){ showEl('login-view'); hideEl('app-view'); }
+  function showApp(){ hideEl('login-view'); showEl('app-view'); }
+  function setNav(w){ $('nav-dash').classList.toggle('active',w==='dash'); $('nav-cot').classList.toggle('active',w==='cot'); }
+  function viewDashboard(){ showEl('dashboard-view'); hideEl('cotizador-view'); setNav('dash'); cargarDashboard(); }
+  function viewCotizador(){ hideEl('dashboard-view'); showEl('cotizador-view'); setNav('cot'); }
+
+  /* ---- AUTH ---- */
+  async function checkSession(){
+    if(!sb){ showLogin(); $('login-msg').textContent='No se pudo conectar (revisa tu internet).'; return; }
+    const { data } = await sb.auth.getSession();
+    if(data && data.session) onLoggedIn(data.session); else showLogin();
+  }
+  async function login(){
+    if(!sb){ $('login-msg').textContent='Sin conexión a Supabase.'; return; }
+    const email=$('login-email').value.trim(), password=$('login-pass').value;
+    $('login-msg').textContent='Entrando…';
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if(error){ $('login-msg').textContent='Error: '+error.message; return; }
+    onLoggedIn(data.session);
+  }
+  function onLoggedIn(session){
+    $('login-msg').textContent=''; $('login-pass').value='';
+    $('user-email').textContent = session.user.email;
+    showApp(); cargarTarifasBase(); cargarClientes(); viewDashboard();
+  }
+  async function logout(){ if(sb) await sb.auth.signOut(); currentQuoteId=null; showLogin(); }
+
+  /* ---- TARIFAS BASE (nube) ---- */
+  const RATE_MAP={base:'r-base',f2:'r-f2',f3:'r-f3',est:'r-est',estfix:'r-estfix',pool:'r-pool',elec:'r-elec',san:'r-san',pap:'r-pap',tram:'r-tram',levarq:'r-levarq',levest:'r-levest',rate:'r-rate'};
+  function aplicarTarifas(t){ if(!t) return; Object.keys(RATE_MAP).forEach(k=>{ if(t[k]!==undefined && $(RATE_MAP[k])) $(RATE_MAP[k]).value=t[k]; }); render(); }
+  async function cargarTarifasBase(){
+    if(!sb) return;
+    try{ const { data } = await sb.from('configuracion').select('tarifas').eq('id',1).single(); if(data) aplicarTarifas(data.tarifas); }catch(e){ console.error(e); }
+  }
+  async function guardarTarifasBase(){
+    if(!sb) return toast('Sin conexión', false);
+    const { error } = await sb.from('configuracion').update({ tarifas: rates() }).eq('id',1);
+    toast(error? 'Error guardando tarifas' : 'Tarifas base guardadas', !error);
+  }
+
+  /* ---- CLIENTES ---- */
+  async function cargarClientes(){
+    if(!sb) return;
+    try{
+      const { data } = await sb.from('clientes').select('id,nombre').order('nombre');
+      clientesCache = data||[];
+      const sel=$('cliente-sel');
+      sel.innerHTML='<option value="">— Selecciona —</option>'+clientesCache.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+      if(currentClienteId) sel.value=currentClienteId;
+    }catch(e){ console.error(e); }
+  }
+  async function nuevoCliente(){
+    if(!sb) return toast('Sin conexión', false);
+    const nombre=prompt('Nombre del nuevo cliente:'); if(!nombre) return;
+    const contacto=prompt('Contacto (opcional):')||null;
+    const { data, error } = await sb.from('clientes').insert({nombre, contacto}).select().single();
+    if(error){ toast('Error creando cliente', false); return; }
+    await cargarClientes(); $('cliente-sel').value=data.id; onClienteChange(); toast('Cliente creado');
+  }
+  function onClienteChange(){
+    const sel=$('cliente-sel'); currentClienteId=sel.value||null;
+    const c=clientesCache.find(x=>x.id===sel.value);
+    $('i-cliente').value = c? c.nombre : ''; render();
+  }
+
+  /* ---- SNAPSHOT / RESTORE ---- */
+  function snapshot(){
+    return { cliente:$('i-cliente').value, cliente_id:currentClienteId, proyecto:$('i-proyecto').value, ubic:$('i-ubic').value,
+      niveles:state.niveles, metrajeMode:state.metrajeMode, areaUniforme:state.areaUniforme, areas:state.areas.slice(),
+      piscina:state.piscina, itbis:state.itbis, showDetail:state.showDetail, cur:state.cur,
+      serviceOrder:state.serviceOrder.slice(), services:Object.assign({},state.services),
+      process:state.process.map(p=>Object.assign({},p)), tarifas:rates(), fecha:$('doc-fecha').textContent };
+  }
+  function DEFAULT_SNAP(){ return {
+    cliente:'', cliente_id:null, proyecto:'', ubic:'',
+    niveles:3, metrajeMode:'uniforme', areaUniforme:320, areas:[320,320,320],
+    piscina:true, itbis:false, showDetail:false, cur:'RD',
+    serviceOrder:['levarq','arq','levest','est','elec','san','pap','tram'],
+    services:{levarq:false,arq:true,levest:false,est:true,elec:true,san:true,pap:true,tram:false},
+    process:[ {title:'Levantamiento',desc:'Medición y registro del sitio',on:true},
+      {title:'Anteproyecto',desc:'Propuesta de diseño a aprobar',on:true},
+      {title:'Planos técnicos',desc:'Juego completo sellado',on:true},
+      {title:'Tramitación',desc:'Gestión ante el Ayuntamiento',on:true} ] }; }
+  function restore(s){
+    $('i-cliente').value=s.cliente||''; $('i-proyecto').value=s.proyecto||''; $('i-ubic').value=s.ubic||'';
+    currentClienteId=s.cliente_id||null;
+    state.niveles=s.niveles; state.metrajeMode=s.metrajeMode; state.areaUniforme=s.areaUniforme; state.areas=(s.areas||[]).slice();
+    state.piscina=s.piscina; state.itbis=s.itbis; state.showDetail=s.showDetail; state.cur=s.cur;
+    state.serviceOrder=s.serviceOrder.slice(); state.services=Object.assign({},s.services); state.process=s.process.map(p=>Object.assign({},p));
+    $('i-area-uniforme').value=state.areaUniforme; $('lvl-count').textContent=state.niveles;
+    setSwitch($('sw-itbis'),state.itbis); setSwitch($('sw-detail'),state.showDetail);
+    document.querySelectorAll('#curSeg button').forEach(b=>{const on=b.dataset.cur===state.cur;b.classList.toggle('active',on);b.setAttribute('aria-pressed',on);});
+    document.querySelectorAll('#metMode button').forEach(b=>{const on=b.dataset.m===state.metrajeMode;b.classList.toggle('active',on);b.setAttribute('aria-pressed',on);});
+    $('met-uniforme').style.display=state.metrajeMode==='uniforme'?'block':'none';
+    $('met-nivel').style.display=state.metrajeMode==='uniforme'?'none':'block';
+    if(state.metrajeMode==='nivel') buildLevelInputs();
+    if(s.tarifas) aplicarTarifas(s.tarifas);
+    if(s.fecha) $('doc-fecha').textContent=s.fecha;
+    if($('cliente-sel') && clientesCache.find(c=>c.id===currentClienteId)) $('cliente-sel').value=currentClienteId;
+    renderPanelServices(); renderPanelProcess(); renderProcess(); render();
+  }
+
+  /* ---- ESTADO ---- */
+  function setEstadoSeg(e){ currentEstado=e; document.querySelectorAll('#estadoSeg button').forEach(b=>b.classList.toggle('active',b.dataset.e===e)); }
+  function hoyFecha(){ return new Date().toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'}).replace('.',''); }
+
+  /* ---- GUARDAR ---- */
+  async function guardar(){
+    if(!sb) return toast('Sin conexión', false);
+    if(!$('i-cliente').value){ toast('Selecciona un cliente primero', false); return; }
+    const row={ cliente_id:currentClienteId, cliente_nombre:$('i-cliente').value, proyecto:$('i-proyecto').value,
+      estado:currentEstado, moneda:state.cur, total:state.grandTotal||0, estado_json:snapshot() };
+    try{
+      let res;
+      if(currentQuoteId) res=await sb.from('cotizaciones').update(row).eq('id',currentQuoteId).select('id,numero').single();
+      else res=await sb.from('cotizaciones').insert(row).select('id,numero').single();
+      if(res.error){ toast('Error: '+res.error.message, false); return; }
+      currentQuoteId=res.data.id;
+      if(res.data.numero) $('doc-numero').textContent=res.data.numero;
+      toast('Guardada · '+(res.data.numero||''));
+    }catch(e){ toast('Error de conexión', false); }
+  }
+
+  /* ---- DASHBOARD ---- */
+  async function cargarDashboard(){
+    const cont=$('dash-list'); cont.innerHTML='<div class="dash-empty">Cargando…</div>';
+    if(!sb){ cont.innerHTML='<div class="dash-empty">Sin conexión.</div>'; return; }
+    try{
+      const { data, error } = await sb.from('cotizaciones')
+        .select('id,numero,cliente_nombre,proyecto,estado,moneda,total,total_enviada,enviada_at,updated_at,created_at')
+        .order('created_at',{ascending:false});
+      if(error){ cont.innerHTML='<div class="dash-empty">Error: '+error.message+'</div>'; return; }
+      dashData=data||[]; renderDashList();
+    }catch(e){ cont.innerHTML='<div class="dash-empty">Error de conexión.</div>'; }
+  }
+  function renderDashList(){
+    const cont=$('dash-list');
+    let rows = dashFilter==='todas'? dashData : dashData.filter(q=>q.estado===dashFilter);
+    if(!rows.length){ cont.innerHTML='<div class="dash-empty">Aún no hay cotizaciones aquí. Toca “+ Nueva”.</div>'; return; }
+    cont.innerHTML=rows.map(renderDashRow).join('');
+    cont.querySelectorAll('[data-open]').forEach(el=>el.addEventListener('click',()=>abrirCotizacion(el.dataset.open)));
+  }
+  function renderDashRow(q){
+    const editada = q.enviada_at && q.updated_at>q.enviada_at;
+    const montoCambio = q.total_enviada!=null && Number(q.total)!==Number(q.total_enviada);
+    const fecha = q.created_at? new Date(q.created_at).toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'}) : '';
+    const sym = q.moneda==='USD'?'$':'RD$';
+    const tot = sym+' '+Number(q.total||0).toLocaleString('en-US');
+    const flags = (editada||montoCambio)? `<div class="dr-flags">${editada?'<span class="flag">editada tras envío</span>':''}${montoCambio?'<span class="flag warn">monto cambió</span>':''}</div>` : '';
+    return `<button class="dash-row" data-open="${q.id}">
+      <div class="dr-main">
+        <div class="dr-top"><span class="dr-num">${q.numero||'(sin número)'}</span><span class="badge b-${q.estado}">${q.estado}</span></div>
+        <div class="dr-cli">${q.cliente_nombre||'—'}</div>
+        <div class="dr-proy">${(q.proyecto||'')}${q.proyecto?' · ':''}${fecha}</div>${flags}
+      </div>
+      <div class="dr-total">${tot}</div>
+    </button>`;
+  }
+  async function abrirCotizacion(id){
+    if(!sb) return;
+    try{
+      const { data, error } = await sb.from('cotizaciones').select('id,numero,estado,estado_json').eq('id',id).single();
+      if(error||!data){ toast('Error abriendo', false); return; }
+      currentQuoteId=data.id; setEstadoSeg(data.estado||'borrador');
+      restore(data.estado_json); $('doc-numero').textContent=data.numero||'(sin guardar)'; viewCotizador();
+    }catch(e){ toast('Error de conexión', false); }
+  }
+  function nuevaCotizacion(){
+    currentQuoteId=null; currentClienteId=null; setEstadoSeg('borrador');
+    restore(DEFAULT_SNAP()); cargarTarifasBase();
+    $('doc-numero').textContent='(sin guardar)'; $('doc-fecha').textContent=hoyFecha();
+    if($('cliente-sel')) $('cliente-sel').value='';
+    viewCotizador();
+  }
+
+  /* ---- WIRING ---- */
+  $('login-btn').addEventListener('click', login);
+  $('login-pass').addEventListener('keydown', e=>{ if(e.key==='Enter') login(); });
+  $('logout-btn').addEventListener('click', logout);
+  $('nav-dash').addEventListener('click', viewDashboard);
+  $('nav-cot').addEventListener('click', viewCotizador);
+  $('btn-nueva').addEventListener('click', nuevaCotizacion);
+  $('btn-guardar').addEventListener('click', guardar);
+  $('btn-tarifas').addEventListener('click', guardarTarifasBase);
+  $('cliente-sel').addEventListener('change', onClienteChange);
+  $('btn-nuevo-cliente').addEventListener('click', nuevoCliente);
+  $('estadoSeg').addEventListener('click', e=>{ const b=e.target.closest('button'); if(b) setEstadoSeg(b.dataset.e); });
+  $('dash-filters').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; dashFilter=b.dataset.f; [...e.currentTarget.children].forEach(x=>x.classList.toggle('active',x===b)); renderDashList(); });
+
+  checkSession();
+</script>
+</body>
+</html>
