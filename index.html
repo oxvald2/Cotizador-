@@ -220,14 +220,19 @@
   @media print{
     @page{size:letter;margin:0;}
     html,body{background:#fff;margin:0;}
+    /* nada de interfaz va al PDF */
+    #topbar,#login-view,.toast,#dashboard-view{display:none !important;}
+    #app-view,#cotizador-view{display:block !important;}
     .app{display:block;}
     .panel{display:none !important;}
     .preview{padding:0;overflow:visible;display:block;}
     .sheet{box-shadow:none;width:100%;min-width:0;}
-    .content{padding:0;gap:0;}
-    .page1,.page2{box-shadow:none;min-height:100vh;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-    .page1{padding:0.55in 0.8in 0.5in;}
-    .page2{break-before:page;padding:0.62in 0.8in 0.5in;}
+    .content{padding:0;gap:0;display:block;}
+    .page1,.page2{box-shadow:none;display:block;min-height:0;height:auto;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .page1{padding:0.55in 0.8in 0.5in;break-after:page;page-break-after:always;}
+    .page2{padding:0.62in 0.8in 0.5in;break-before:auto;}
+    /* no partir bloques a la mitad entre páginas */
+    .svc,.total,.total-pre,.sec-h,.parties,.deliver,.step-c,.cond,.accept,.foot{break-inside:avoid;page-break-inside:avoid;}
     .svc-rows{display:none !important;}   /* la copia del cliente nunca muestra el cálculo */
     [contenteditable="true"]{background:none !important;box-shadow:none !important;}
   }
