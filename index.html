@@ -20,6 +20,7 @@
     --z-sticky:100; --z-tab:200;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   body{font-family:'Archivo',system-ui,sans-serif;background:#cdc8bb;color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;}
 
   :focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:4px;}
@@ -211,7 +212,6 @@
     .app{grid-template-columns:1fr;}
     .panel{position:static;height:auto;}
     .preview{padding:10px;}
-    .sheet{touch-action:pinch-zoom;}
   }
 
   /* motion reducido: no opcional */
