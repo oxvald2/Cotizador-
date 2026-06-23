@@ -420,6 +420,15 @@
     <button type="button" class="switch" id="sw-itbis" role="switch" aria-checked="false"><span>Aplicar ITBIS (18%)</span><span class="track"></span></button>
     <button type="button" class="switch" id="sw-detail" role="switch" aria-checked="false"><span>Ver desglose (interno)</span><span class="track"></span></button>
 
+    <hr>
+    <div class="sec-label">Comprobante fiscal</div>
+    <button type="button" class="switch" id="sw-fiscal" role="switch" aria-checked="false"><span>Factura con crédito fiscal</span><span class="track"></span></button>
+    <div id="fiscal-fields" style="display:none">
+      <div class="field"><label for="i-rnc-cli">RNC / Cédula del cliente</label><input type="text" id="i-rnc-cli" placeholder="131-49083-2"></div>
+      <div class="field"><label for="i-ncf">NCF</label><input type="text" id="i-ncf" placeholder="B0100000012"></div>
+      <div class="hint">El NCF se sugiere consecutivo; puedes editarlo. ITBIS se activa solo.</div>
+    </div>
+
     <details class="adv">
       <summary><span class="gear" aria-hidden="true">⚙</span> Ajustar precios <span class="chev" aria-hidden="true">▾</span></summary>
       <div class="adv-grid">
@@ -478,11 +487,13 @@
             <div class="tag">Diseño · Desarrollo · Construcción</div>
           </div>
           <div class="docmeta">
-            <div class="coti">Cotización</div>
-            <div class="dpt">Diseño y planos técnicos</div>
+            <div class="coti" id="doc-title">Cotización</div>
+            <div class="dpt" id="doc-dpt">Diseño y planos técnicos</div>
             <div class="ml"><span class="lbl">N.º</span><span id="doc-numero">(sin guardar)</span></div>
+            <div class="ml" id="doc-ml-ncf" style="display:none"><span class="lbl">NCF</span><span id="doc-ncf"></span></div>
+            <div class="ml" id="doc-ml-rnc" style="display:none"><span class="lbl">RNC</span><span id="doc-rnc-em">1-32-68933-1</span></div>
             <div class="ml"><span class="lbl">Fecha</span><span id="doc-fecha">20 jun 2026</span></div>
-            <div class="ml"><span class="lbl">Válida</span>15 días</div>
+            <div class="ml" id="doc-ml-valida"><span class="lbl">Válida</span>15 días</div>
           </div>
         </header>
 
@@ -491,6 +502,7 @@
             <div class="lbl">Cliente</div>
             <div class="nm" id="d-cliente">—</div>
             <div class="sub">Propuesta de servicios profesionales</div>
+            <div class="sub" id="doc-cli-rnc" style="display:none"></div>
           </div>
           <div class="party">
             <div class="lbl">Proyecto</div>
@@ -565,7 +577,7 @@
 <script>
   const state = {
     niveles:3, metrajeMode:'uniforme', areaUniforme:320, areas:[320,320,320],
-    piscina:true, itbis:false, showDetail:false, cur:'RD',
+    piscina:true, itbis:false, showDetail:false, cur:'RD', fiscal:false,
     serviceOrder:['levarq','arq','levest','est','elec','san','pap','tram'],
     services:{levarq:false,arq:true,levest:false,est:true,elec:true,san:true,pap:true,tram:false},
     process:[
@@ -617,6 +629,25 @@
     $('d-proyecto').textContent=$('i-proyecto').value||'—';
     let totalM2=0; for(let i=0;i<state.niveles;i++) totalM2+=getArea(i);
     $('d-proy-detail').textContent=`${state.niveles} niveles · ${totalM2.toLocaleString('en-US')} m² totales · ${$('i-ubic').value||''}`;
+
+    // modo fiscal (Factura con Crédito Fiscal)
+    if(state.fiscal){
+      $('doc-title').textContent='Factura';
+      $('doc-dpt').textContent='Comprobante con crédito fiscal';
+      $('doc-ml-ncf').style.display=''; $('doc-ncf').textContent=($('i-ncf')?$('i-ncf').value:'')||'—';
+      $('doc-ml-rnc').style.display='';
+      $('doc-ml-valida').style.display='none';
+      const rncc=$('i-rnc-cli')?$('i-rnc-cli').value:'';
+      if(rncc){ $('doc-cli-rnc').style.display=''; $('doc-cli-rnc').textContent='RNC / Cédula: '+rncc; }
+      else { $('doc-cli-rnc').style.display='none'; }
+    } else {
+      $('doc-title').textContent='Cotización';
+      $('doc-dpt').textContent='Diseño y planos técnicos';
+      $('doc-ml-ncf').style.display='none';
+      $('doc-ml-rnc').style.display='none';
+      $('doc-ml-valida').style.display='';
+      $('doc-cli-rnc').style.display='none';
+    }
 
     // services
     let arqSub=0, arqRows='';
@@ -758,6 +789,18 @@
   // option switches
   $('sw-itbis').addEventListener('click',e=>{state.itbis=!state.itbis;setSwitch(e.currentTarget,state.itbis);render();});
   $('sw-detail').addEventListener('click',e=>{state.showDetail=!state.showDetail;setSwitch(e.currentTarget,state.showDetail);render();});
+  $('sw-fiscal').addEventListener('click',e=>{
+    state.fiscal=!state.fiscal; setSwitch(e.currentTarget,state.fiscal);
+    $('fiscal-fields').style.display=state.fiscal?'block':'none';
+    if(state.fiscal){
+      if(!state.itbis){ state.itbis=true; setSwitch($('sw-itbis'),true); }
+      if(!$('i-ncf').value) $('i-ncf').value=nextNCF();
+      if(!$('i-rnc-cli').value && currentClienteId){ const c=clientesCache.find(x=>x.id===currentClienteId); if(c&&c.rnc) $('i-rnc-cli').value=c.rnc; }
+    }
+    render();
+  });
+  $('i-ncf').addEventListener('input', render);
+  $('i-rnc-cli').addEventListener('input', render);
 
   // currency
   $('curSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state.cur=b.dataset.cur;[...e.currentTarget.children].forEach(x=>{const on=x===b;x.classList.toggle('active',on);x.setAttribute('aria-pressed',on?'true':'false');});render();});
@@ -781,6 +824,9 @@
 
   let currentQuoteId = null, currentClienteId = null, currentEstado = 'borrador';
   let clientesCache = [], dashData = [], dashFilter = 'todas';
+  let ncfSerie = 'B01', ncfSiguiente = 12;
+  const nextNCF = ()=> ncfSerie + String(ncfSiguiente).padStart(8,'0');
+  const ncfSeq = s => { const d=String(s||'').replace(/\D/g,''); return parseInt(d.slice(-8)||'0',10); };
 
   function toast(msg, ok=true){ const t=$('toast'); t.textContent=msg; t.className='toast '+(ok?'':'err')+' show'; setTimeout(()=>t.classList.remove('show'),2800); }
   const showEl=id=>$(id).style.display='', hideEl=id=>$(id).style.display='none';
@@ -833,7 +879,14 @@
   function aplicarTarifas(t){ if(!t) return; Object.keys(RATE_MAP).forEach(k=>{ if(t[k]!==undefined && $(RATE_MAP[k])) $(RATE_MAP[k]).value=t[k]; }); render(); }
   async function cargarTarifasBase(){
     if(!sb) return;
-    try{ const { data } = await sb.from('configuracion').select('tarifas').eq('id',1).single(); if(data) aplicarTarifas(data.tarifas); }catch(e){ console.error(e); }
+    try{
+      const { data } = await sb.from('configuracion').select('*').eq('id',1).single();
+      if(data){
+        aplicarTarifas(data.tarifas);
+        if(data.ncf_serie) ncfSerie=data.ncf_serie;
+        if(data.ncf_siguiente!=null) ncfSiguiente=data.ncf_siguiente;
+      }
+    }catch(e){ console.error(e); }
   }
   async function guardarTarifasBase(){
     if(!sb) return toast('Sin conexión', false);
@@ -845,7 +898,7 @@
   async function cargarClientes(){
     if(!sb) return;
     try{
-      const { data } = await sb.from('clientes').select('id,nombre').order('nombre');
+      const { data } = await sb.from('clientes').select('*').order('nombre');
       clientesCache = data||[];
       const sel=$('cliente-sel');
       sel.innerHTML='<option value="">— Selecciona —</option>'+clientesCache.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
@@ -856,14 +909,17 @@
     if(!sb) return toast('Sin conexión', false);
     const nombre=prompt('Nombre del nuevo cliente:'); if(!nombre) return;
     const contacto=prompt('Contacto (opcional):')||null;
-    const { data, error } = await sb.from('clientes').insert({nombre, contacto}).select().single();
+    const rnc=prompt('RNC / Cédula (opcional, para facturas):')||null;
+    const { data, error } = await sb.from('clientes').insert({nombre, contacto, rnc}).select().single();
     if(error){ toast('Error creando cliente', false); return; }
     await cargarClientes(); $('cliente-sel').value=data.id; onClienteChange(); toast('Cliente creado');
   }
   function onClienteChange(){
     const sel=$('cliente-sel'); currentClienteId=sel.value||null;
     const c=clientesCache.find(x=>x.id===sel.value);
-    $('i-cliente').value = c? c.nombre : ''; render();
+    $('i-cliente').value = c? c.nombre : '';
+    if($('i-rnc-cli') && c && c.rnc) $('i-rnc-cli').value=c.rnc;
+    render();
   }
 
   /* ---- SNAPSHOT / RESTORE ---- */
@@ -872,12 +928,13 @@
       niveles:state.niveles, metrajeMode:state.metrajeMode, areaUniforme:state.areaUniforme, areas:state.areas.slice(),
       piscina:state.piscina, itbis:state.itbis, showDetail:state.showDetail, cur:state.cur,
       serviceOrder:state.serviceOrder.slice(), services:Object.assign({},state.services),
-      process:state.process.map(p=>Object.assign({},p)), tarifas:rates(), fecha:$('doc-fecha').textContent };
+      process:state.process.map(p=>Object.assign({},p)), tarifas:rates(), fecha:$('doc-fecha').textContent,
+      fiscal:state.fiscal, ncf:($('i-ncf')?$('i-ncf').value:''), rnc_cliente:($('i-rnc-cli')?$('i-rnc-cli').value:'') };
   }
   function DEFAULT_SNAP(){ return {
     cliente:'', cliente_id:null, proyecto:'', ubic:'',
     niveles:3, metrajeMode:'uniforme', areaUniforme:320, areas:[320,320,320],
-    piscina:true, itbis:false, showDetail:false, cur:'RD',
+    piscina:true, itbis:false, showDetail:false, cur:'RD', fiscal:false, ncf:'', rnc_cliente:'',
     serviceOrder:['levarq','arq','levest','est','elec','san','pap','tram'],
     services:{levarq:false,arq:true,levest:false,est:true,elec:true,san:true,pap:true,tram:false},
     process:[ {title:'Levantamiento',desc:'Medición y registro del sitio',on:true},
@@ -899,6 +956,10 @@
     if(state.metrajeMode==='nivel') buildLevelInputs();
     if(s.tarifas) aplicarTarifas(s.tarifas);
     if(s.fecha) $('doc-fecha').textContent=s.fecha;
+    state.fiscal=!!s.fiscal;
+    $('i-ncf').value=s.ncf||''; $('i-rnc-cli').value=s.rnc_cliente||'';
+    setSwitch($('sw-fiscal'),state.fiscal);
+    $('fiscal-fields').style.display = state.fiscal?'block':'none';
     if($('cliente-sel') && clientesCache.find(c=>c.id===currentClienteId)) $('cliente-sel').value=currentClienteId;
     renderPanelServices(); renderPanelProcess(); renderProcess(); render();
   }
@@ -920,7 +981,17 @@
       if(res.error){ toast('Error: '+res.error.message, false); return; }
       currentQuoteId=res.data.id;
       if(res.data.numero) $('doc-numero').textContent=res.data.numero;
-      toast('Guardada · '+(res.data.numero||''));
+      // si es factura fiscal: avanzar el NCF consecutivo y recordar el RNC del cliente
+      if(state.fiscal){
+        const ncf=$('i-ncf').value.trim();
+        const seq=ncfSeq(ncf);
+        if(seq>=ncfSiguiente){ ncfSiguiente=seq+1; try{ await sb.from('configuracion').update({ncf_siguiente:ncfSiguiente}).eq('id',1); }catch(e){} }
+        const rncc=$('i-rnc-cli').value.trim();
+        if(currentClienteId && rncc){ try{ await sb.from('clientes').update({rnc:rncc}).eq('id',currentClienteId); const c=clientesCache.find(x=>x.id===currentClienteId); if(c) c.rnc=rncc; }catch(e){} }
+        toast('Factura guardada · '+ncf);
+      } else {
+        toast('Guardada · '+(res.data.numero||''));
+      }
     }catch(e){ toast('Error de conexión', false); }
   }
 
