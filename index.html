@@ -210,6 +210,8 @@
   @media (max-width:900px){
     .app{grid-template-columns:1fr;}
     .panel{position:static;height:auto;}
+    .preview{padding:10px;}
+    .sheet{touch-action:pinch-zoom;}
   }
 
   /* motion reducido: no opcional */
@@ -293,6 +295,7 @@
   body.pdf-gen .preview{padding:0 !important;overflow:visible !important;}
   body.pdf-gen .content{gap:0 !important;}
   body.pdf-gen .page1,body.pdf-gen .page2{box-shadow:none !important;background:#fff !important;width:8.5in !important;height:10.7in !important;min-height:10.7in !important;max-height:10.7in !important;overflow:hidden !important;}
+  body.pdf-gen .sheet{zoom:1 !important;}
   body.pdf-gen .svc-rows{display:none !important;}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .toast.err{background:#8a1c1c;}
@@ -774,7 +777,23 @@
   function showApp(){ hideEl('login-view'); showEl('app-view'); }
   function setNav(w){ $('nav-dash').classList.toggle('active',w==='dash'); $('nav-cot').classList.toggle('active',w==='cot'); }
   function viewDashboard(){ showEl('dashboard-view'); hideEl('cotizador-view'); setNav('dash'); cargarDashboard(); }
-  function viewCotizador(){ hideEl('dashboard-view'); showEl('cotizador-view'); setNav('cot'); }
+  function viewCotizador(){ hideEl('dashboard-view'); showEl('cotizador-view'); setNav('cot'); fitPreview(); }
+
+  /* la hoja (8.5in) entra completa en pantallas chicas; el zoom con dedos queda libre */
+  function fitPreview(){
+    const sheet=document.querySelector('.sheet'); const prev=document.querySelector('.preview');
+    if(!sheet||!prev) return;
+    if(window.innerWidth<=900){
+      setTimeout(()=>{
+        const cs=getComputedStyle(prev); const pad=parseFloat(cs.paddingLeft||0)+parseFloat(cs.paddingRight||0);
+        const avail=prev.clientWidth-pad; const sheetPx=8.5*96;
+        const f=avail>0? Math.min(1, avail/sheetPx) : 1;
+        sheet.style.zoom = f;
+      },30);
+    } else { sheet.style.zoom=''; }
+  }
+  window.addEventListener('resize', fitPreview);
+  window.addEventListener('orientationchange', fitPreview);
 
   /* ---- AUTH ---- */
   async function checkSession(){
