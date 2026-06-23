@@ -287,6 +287,13 @@
   .b-vencida{background:rgba(176,0,0,.14);color:#b00020;}
 
   .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-family:'IBM Plex Mono';font-size:12.5px;padding:11px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:600;max-width:90%;text-align:center;}
+
+  /* modo generación de PDF: documento puro tamaño carta, sin interfaz */
+  body.pdf-gen #topbar,body.pdf-gen #dashboard-view,body.pdf-gen .panel,body.pdf-gen .toast{display:none !important;}
+  body.pdf-gen .preview{padding:0 !important;overflow:visible !important;}
+  body.pdf-gen .content{gap:0 !important;}
+  body.pdf-gen .page1,body.pdf-gen .page2{box-shadow:none !important;background:#fff !important;width:8.5in !important;height:10.7in !important;min-height:10.7in !important;max-height:10.7in !important;overflow:hidden !important;}
+  body.pdf-gen .svc-rows{display:none !important;}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .toast.err{background:#8a1c1c;}
 
@@ -441,7 +448,7 @@
 
     <div class="panel-actions">
       <div class="seg" id="curSeg" role="group" aria-label="Moneda"><button type="button" class="active" data-cur="RD" aria-pressed="true">RD$</button><button type="button" data-cur="USD" aria-pressed="false">USD</button></div>
-      <button type="button" class="pdf-btn" onclick="window.print()">PDF</button>
+      <button type="button" class="pdf-btn" id="btn-pdf">Descargar PDF</button>
     </div>
   </aside>
 
@@ -539,6 +546,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js"></script>
 <script>
   const state = {
     niveles:3, metrajeMode:'uniforme', areaUniforme:320, areas:[320,320,320],
@@ -950,6 +958,25 @@
   $('btn-nuevo-cliente').addEventListener('click', nuevoCliente);
   $('estadoSeg').addEventListener('click', e=>{ const b=e.target.closest('button'); if(b) setEstadoSeg(b.dataset.e); });
   $('dash-filters').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; dashFilter=b.dataset.f; [...e.currentTarget.children].forEach(x=>x.classList.toggle('active',x===b)); renderDashList(); });
+
+  /* ---- DESCARGAR PDF (sin pasar por el print del navegador) ---- */
+  async function descargarPDF(){
+    const numero=($('doc-numero').textContent||'cotizacion').trim().replace(/[^\w\-]/g,'_');
+    const src=document.querySelector('.content');
+    if(typeof html2pdf==='undefined'){ toast('Abriendo impresión del navegador…'); window.print(); return; }
+    toast('Generando PDF…');
+    document.body.classList.add('pdf-gen');
+    await new Promise(r=>setTimeout(r,80));
+    const opt={ margin:0, filename:'Cotizacion-'+numero+'.pdf',
+      image:{type:'jpeg',quality:0.98},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',windowWidth:src.scrollWidth,scrollX:0,scrollY:0},
+      jsPDF:{unit:'in',format:'letter',orientation:'portrait'},
+      pagebreak:{mode:['css','legacy'],before:'.page2'} };
+    try{ await html2pdf().set(opt).from(src).save(); toast('PDF descargado'); }
+    catch(e){ console.error(e); toast('No se pudo generar el PDF', false); }
+    finally{ document.body.classList.remove('pdf-gen'); }
+  }
+  $('btn-pdf').addEventListener('click', descargarPDF);
 
   checkSession();
 </script>
