@@ -292,10 +292,18 @@
 
   /* modo generación de PDF: documento puro tamaño carta, sin interfaz */
   body.pdf-gen #topbar,body.pdf-gen #dashboard-view,body.pdf-gen .panel,body.pdf-gen .toast{display:none !important;}
-  body.pdf-gen .preview{padding:0 !important;overflow:visible !important;}
-  body.pdf-gen .content{gap:0 !important;}
+  body.pdf-gen .preview{padding:0 !important;overflow:visible !important;display:block !important;}
+  body.pdf-gen .content{gap:0 !important;margin:0 !important;width:8.5in !important;}
   body.pdf-gen .page1,body.pdf-gen .page2{box-shadow:none !important;background:#fff !important;width:8.5in !important;height:10.7in !important;min-height:10.7in !important;max-height:10.7in !important;overflow:hidden !important;}
-  body.pdf-gen .sheet{zoom:1 !important;}
+  body.pdf-gen .sheet{zoom:1 !important;margin:0 !important;}
+
+  /* vista completa EN VIVO: el documento real a pantalla completa, zoom/scroll nativo */
+  #fp-close{display:none;position:fixed;top:12px;right:14px;z-index:710;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:999px;padding:9px 16px;font-family:'IBM Plex Mono';font-size:12px;cursor:pointer;}
+  body.fullpreview #fp-close{display:block;}
+  body.fullpreview #topbar,body.fullpreview .panel,body.fullpreview #dashboard-view{display:none !important;}
+  body.fullpreview .app{display:block;}
+  body.fullpreview .preview{position:fixed;inset:0;background:#3a3d40;overflow:auto;-webkit-overflow-scrolling:touch;padding:16px;z-index:700;justify-content:center;align-items:flex-start;}
+  body.fullpreview .sheet{margin:0 auto;}
   body.pdf-gen .svc-rows{display:none !important;}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .toast.err{background:#8a1c1c;}
@@ -449,6 +457,8 @@
     <button type="button" class="pdf-btn" id="btn-guardar">Guardar cotización</button>
     <button type="button" class="ghost-btn" id="btn-tarifas">Guardar tarifas base</button>
 
+    <button type="button" class="pdf-btn" id="btn-vista" style="margin-top:10px;background:var(--teal-soft);color:#fff;">Vista completa</button>
+
     <div class="panel-actions">
       <div class="seg" id="curSeg" role="group" aria-label="Moneda"><button type="button" class="active" data-cur="RD" aria-pressed="true">RD$</button><button type="button" data-cur="USD" aria-pressed="false">USD</button></div>
       <button type="button" class="pdf-btn" id="btn-pdf">Descargar PDF</button>
@@ -545,6 +555,8 @@
 </div>
   </section><!-- /cotizador-view -->
 </div><!-- /app-view -->
+
+<button type="button" id="fp-close">Cerrar vista ✕</button>
 
 <div class="toast" id="toast"></div>
 
@@ -988,7 +1000,10 @@
     await new Promise(r=>setTimeout(r,80));
     const opt={ margin:0, filename:'Cotizacion-'+numero+'.pdf',
       image:{type:'jpeg',quality:0.98},
-      html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',windowWidth:src.scrollWidth,scrollX:0,scrollY:0},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',
+        width:src.scrollWidth,height:src.scrollHeight,
+        windowWidth:src.scrollWidth,windowHeight:src.scrollHeight,
+        x:0,y:0,scrollX:0,scrollY:0},
       jsPDF:{unit:'in',format:'letter',orientation:'portrait'},
       pagebreak:{mode:['css','legacy'],before:'.page2'} };
     try{ await html2pdf().set(opt).from(src).save(); toast('PDF descargado'); }
@@ -996,6 +1011,14 @@
     finally{ document.body.classList.remove('pdf-gen'); }
   }
   $('btn-pdf').addEventListener('click', descargarPDF);
+
+  /* ---- VISTA COMPLETA EN VIVO: el documento real ocupa la pantalla, zoom/scroll nativo ---- */
+  function toggleFullPreview(on){
+    document.body.classList.toggle('fullpreview', on);
+    if(on){ fitPreview(); const pv=document.querySelector('.preview'); if(pv) pv.scrollTop=0; }
+  }
+  $('btn-vista').addEventListener('click', ()=>toggleFullPreview(true));
+  $('fp-close').addEventListener('click', ()=>toggleFullPreview(false));
 
   checkSession();
 </script>
