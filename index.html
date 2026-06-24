@@ -263,6 +263,14 @@
   #cotizador-view .panel{top:54px;height:calc(100vh - 54px);}
 
   #dashboard-view{padding:20px 16px 60px;max-width:760px;margin:0 auto;}
+  #clientes-view{padding:20px 16px 60px;max-width:760px;margin:0 auto;}
+  .ghost-back{background:none;border:none;color:var(--teal);font-family:'IBM Plex Mono';font-size:12px;cursor:pointer;padding:6px 0;margin-bottom:10px;}
+  .cli-card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:18px 18px 20px;margin-bottom:20px;}
+  .cli-card .field{margin-bottom:14px;}
+  .cli-card .field label{display:block;font-family:'Archivo';font-size:11.5px;font-weight:600;color:var(--ink);opacity:.9;margin-bottom:6px;}
+  .cli-card .field input{width:100%;background:#fff;border:1px solid var(--line-2);color:var(--ink);font-family:'IBM Plex Mono';font-size:14px;padding:10px 12px;border-radius:8px;}
+  .cli-card .field input:focus{outline:none;border-color:var(--gold);}
+  #clientes-view .sec-h{margin:0 0 12px;}
   .dash-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
   .dash-head h1{font-family:'Anton';font-size:24px;text-transform:uppercase;color:var(--ink);letter-spacing:.02em;}
   .dash-new{background:var(--gold);color:var(--teal);border:none;border-radius:999px;padding:10px 16px;font-family:'IBM Plex Mono';font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;}
@@ -291,7 +299,7 @@
   .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-family:'IBM Plex Mono';font-size:12.5px;padding:11px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:600;max-width:90%;text-align:center;}
 
   /* modo generación de PDF: documento puro tamaño carta, sin interfaz */
-  body.pdf-gen #topbar,body.pdf-gen #dashboard-view,body.pdf-gen .panel,body.pdf-gen .toast{display:none !important;}
+  body.pdf-gen #topbar,body.pdf-gen #dashboard-view,body.pdf-gen #clientes-view,body.pdf-gen .panel,body.pdf-gen .toast{display:none !important;}
   body.pdf-gen .preview{padding:0 !important;overflow:visible !important;display:block !important;}
   body.pdf-gen .content{gap:0 !important;margin:0 !important;width:8.5in !important;}
   body.pdf-gen .page1,body.pdf-gen .page2{box-shadow:none !important;background:#fff !important;width:8.5in !important;height:10.7in !important;min-height:10.7in !important;max-height:10.7in !important;overflow:hidden !important;}
@@ -340,6 +348,7 @@
     <span class="tb-brand">Laios</span>
     <div class="tb-nav">
       <button id="nav-dash" class="active">Dashboard</button>
+      <button id="nav-cli">Clientes</button>
       <button id="nav-cot">Cotizador</button>
     </div>
     <div class="tb-right">
@@ -362,6 +371,28 @@
       <button data-f="vencida">Vencida</button>
     </div>
     <div id="dash-list"></div>
+  </section>
+
+  <!-- CLIENTES -->
+  <section id="clientes-view" style="display:none">
+    <div id="cli-list-wrap">
+      <div class="dash-head">
+        <h1>Clientes</h1>
+        <button class="dash-new" id="btn-cli-nuevo">+ Nuevo</button>
+      </div>
+      <div id="cli-list"></div>
+    </div>
+    <div id="cli-detail" style="display:none">
+      <button class="ghost-back" id="cli-back">← Volver a clientes</button>
+      <div class="cli-card">
+        <div class="field"><label for="cd-nombre">Nombre</label><input type="text" id="cd-nombre"></div>
+        <div class="field"><label for="cd-contacto">Contacto</label><input type="text" id="cd-contacto"></div>
+        <div class="field"><label for="cd-rnc">RNC / Cédula</label><input type="text" id="cd-rnc"></div>
+        <button class="dash-new" id="cd-save">Guardar cambios</button>
+      </div>
+      <div class="sec-h"><span class="st">Cotizaciones de este cliente</span><span class="sm" id="cli-cots-count">—</span></div>
+      <div id="cli-cots"></div>
+    </div>
   </section>
 
   <!-- COTIZADOR -->
@@ -406,13 +437,13 @@
     <hr>
 
     <div class="sec-label">Servicios a cotizar</div>
-    <div class="hint">Activa los que apliquen y ordénalos con ▲▼. El orden se refleja en el PDF.</div>
+    <div class="hint">Activa los que apliquen y arrástralos por el ⠿ para ordenarlos. El orden se refleja en el PDF.</div>
     <div id="svc-list"></div>
 
     <hr>
 
     <div class="sec-label">Proceso</div>
-    <div class="hint">Activa y ordena las etapas con ▲▼. El texto se edita directo en la hoja.</div>
+    <div class="hint">Activa y arrastra las etapas por el ⠿ para ordenarlas. El texto se edita directo en la hoja.</div>
     <div id="proc-list"></div>
 
     <hr>
@@ -420,7 +451,7 @@
     <div class="sec-label">Opciones</div>
     <button type="button" class="switch" id="sw-itbis" role="switch" aria-checked="false"><span>Aplicar ITBIS (18%)</span><span class="track"></span></button>
     <button type="button" class="switch" id="sw-detail" role="switch" aria-checked="false"><span>Ver desglose (interno)</span><span class="track"></span></button>
-    <div class="field" style="margin-top:12px"><label for="i-desc">Descuento (%)</label><input type="number" id="i-desc" value="0" min="0" max="100"></div>
+    <div class="field" style="margin-top:12px"><label for="i-desc">Descuento (RD$)</label><input type="number" id="i-desc" value="0" min="0"></div>
 
     <hr>
     <div class="sec-label">Comprobante fiscal</div>
@@ -708,16 +739,15 @@
     $('svc-count').textContent = n? `${n} ${n===1?'partida':'partidas'}` : '—';
     $('entregables').innerHTML = del || `<div class="empty" style="grid-column:1/-1">—</div>`;
 
-    const disc=Math.min(100,Math.max(0,num('i-desc')));
-    const descAmt=subtotal*disc/100;
+    const descAmt=Math.min(subtotal, Math.max(0, num('i-desc')));
     const baseAmt=subtotal-descAmt;
     const itbisAmt=state.itbis?baseAmt*0.18:0, grand=baseAmt+itbisAmt;
     state.grandTotal = grand; state.subtotalVal = subtotal;
     let tHTML='';
     let pre='';
-    if(disc>0 || state.itbis){
+    if(descAmt>0 || state.itbis){
       pre+=`<div class="tp"><span>Subtotal</span><b>${fmt(subtotal)}</b></div>`;
-      if(disc>0) pre+=`<div class="tp"><span>Descuento (${disc}%)</span><b>– ${fmt(descAmt)}</b></div>`;
+      if(descAmt>0) pre+=`<div class="tp"><span>Descuento</span><b>– ${fmt(descAmt)}</b></div>`;
       if(state.itbis) pre+=`<div class="tp"><span>ITBIS (18%)</span><b>${fmt(itbisAmt)}</b></div>`;
     }
     if(pre) tHTML+=`<div class="total-pre">${pre}</div>`;
@@ -872,9 +902,52 @@
 
   function showLogin(){ showEl('login-view'); hideEl('app-view'); }
   function showApp(){ hideEl('login-view'); showEl('app-view'); }
-  function setNav(w){ $('nav-dash').classList.toggle('active',w==='dash'); $('nav-cot').classList.toggle('active',w==='cot'); }
-  function viewDashboard(){ showEl('dashboard-view'); hideEl('cotizador-view'); setNav('dash'); cargarDashboard(); }
-  function viewCotizador(){ hideEl('dashboard-view'); showEl('cotizador-view'); setNav('cot'); fitPreview(); }
+  function setNav(w){ $('nav-dash').classList.toggle('active',w==='dash'); $('nav-cli').classList.toggle('active',w==='cli'); $('nav-cot').classList.toggle('active',w==='cot'); }
+  function viewDashboard(){ showEl('dashboard-view'); hideEl('clientes-view'); hideEl('cotizador-view'); setNav('dash'); cargarDashboard(); }
+  function viewCotizador(){ hideEl('dashboard-view'); hideEl('clientes-view'); showEl('cotizador-view'); setNav('cot'); fitPreview(); }
+  async function viewClientes(){ hideEl('dashboard-view'); hideEl('cotizador-view'); showEl('clientes-view'); setNav('cli'); await cargarClientes(); mostrarListaClientes(); }
+  function mostrarListaClientes(){ showEl('cli-list-wrap'); hideEl('cli-detail'); renderClientesList(); }
+  function renderClientesList(){
+    const cont=$('cli-list');
+    if(!clientesCache.length){ cont.innerHTML='<div class="dash-empty">Aún no hay clientes. Toca “+ Nuevo”.</div>'; return; }
+    cont.innerHTML=clientesCache.map(c=>`<button class="dash-row" data-cli="${c.id}"><div class="dr-main"><div class="dr-cli">${c.nombre||'—'}</div><div class="dr-proy">${c.contacto||''}${c.rnc?(c.contacto?' · ':'')+'RNC '+c.rnc:''}</div></div><div class="dr-total">›</div></button>`).join('');
+    cont.querySelectorAll('[data-cli]').forEach(el=>el.addEventListener('click',()=>abrirCliente(el.dataset.cli)));
+  }
+  let cliDetailId=null;
+  async function abrirCliente(id){
+    const c=clientesCache.find(x=>x.id===id); if(!c) return;
+    cliDetailId=id;
+    $('cd-nombre').value=c.nombre||''; $('cd-contacto').value=c.contacto||''; $('cd-rnc').value=c.rnc||'';
+    hideEl('cli-list-wrap'); showEl('cli-detail');
+    $('cli-cots').innerHTML='<div class="dash-empty">Cargando…</div>'; $('cli-cots-count').textContent='—';
+    if(!sb) return;
+    try{
+      const { data } = await sb.from('cotizaciones').select('id,numero,proyecto,estado,moneda,total,created_at').eq('cliente_id',id).order('created_at',{ascending:false});
+      const rows=data||[];
+      $('cli-cots-count').textContent = rows.length? `${rows.length} ${rows.length===1?'cotización':'cotizaciones'}` : '0';
+      if(!rows.length){ $('cli-cots').innerHTML='<div class="dash-empty">Sin cotizaciones todavía.</div>'; return; }
+      $('cli-cots').innerHTML=rows.map(q=>{ const sym=q.moneda==='USD'?'$':'RD$'; const tot=sym+' '+Number(q.total||0).toLocaleString('en-US'); const fecha=q.created_at?new Date(q.created_at).toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'}):''; return `<button class="dash-row" data-cot="${q.id}"><div class="dr-main"><div class="dr-top"><span class="dr-num">${q.numero||'(sin número)'}</span><span class="badge b-${q.estado}">${q.estado}</span></div><div class="dr-proy">${q.proyecto||''}${q.proyecto?' · ':''}${fecha}</div></div><div class="dr-total">${tot}</div></button>`; }).join('');
+      $('cli-cots').querySelectorAll('[data-cot]').forEach(el=>el.addEventListener('click',()=>abrirCotizacion(el.dataset.cot)));
+    }catch(e){ $('cli-cots').innerHTML='<div class="dash-empty">Error de conexión.</div>'; }
+  }
+  async function guardarCliente(){
+    if(!sb||!cliDetailId) return;
+    const upd={ nombre:$('cd-nombre').value.trim(), contacto:$('cd-contacto').value.trim()||null, rnc:$('cd-rnc').value.trim()||null };
+    if(!upd.nombre){ toast('El nombre no puede estar vacío', false); return; }
+    const { error } = await sb.from('clientes').update(upd).eq('id',cliDetailId);
+    if(error){ toast('Error guardando', false); return; }
+    const c=clientesCache.find(x=>x.id===cliDetailId); if(c) Object.assign(c,upd);
+    await cargarClientes(); toast('Cliente actualizado');
+  }
+  async function nuevoClienteEnLista(){
+    if(!sb) return toast('Sin conexión', false);
+    const nombre=prompt('Nombre del nuevo cliente:'); if(!nombre) return;
+    const contacto=prompt('Contacto (opcional):')||null;
+    const rnc=prompt('RNC / Cédula (opcional):')||null;
+    const { error } = await sb.from('clientes').insert({nombre, contacto, rnc});
+    if(error){ toast('Error creando cliente', false); return; }
+    await cargarClientes(); renderClientesList(); toast('Cliente creado');
+  }
 
   /* la hoja (8.5in) entra completa en pantallas chicas; el zoom con dedos queda libre */
   function fitPreview(){
@@ -1091,7 +1164,11 @@
   $('login-pass').addEventListener('keydown', e=>{ if(e.key==='Enter') login(); });
   $('logout-btn').addEventListener('click', logout);
   $('nav-dash').addEventListener('click', viewDashboard);
+  $('nav-cli').addEventListener('click', viewClientes);
   $('nav-cot').addEventListener('click', viewCotizador);
+  $('btn-cli-nuevo').addEventListener('click', nuevoClienteEnLista);
+  $('cli-back').addEventListener('click', mostrarListaClientes);
+  $('cd-save').addEventListener('click', guardarCliente);
   $('btn-nueva').addEventListener('click', nuevaCotizacion);
   $('btn-guardar').addEventListener('click', guardar);
   $('btn-tarifas').addEventListener('click', guardarTarifasBase);
