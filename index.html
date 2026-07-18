@@ -258,6 +258,7 @@
   .login-card input:focus{outline:none;border-color:var(--gold);}
   .login-card .lbtn{width:100%;margin-top:18px;background:var(--gold);color:var(--teal);border:none;border-radius:999px;padding:12px;font-family:'IBM Plex Mono';font-weight:600;font-size:13px;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;}
   .login-card .lc-msg{font-size:12px;color:#b00;margin-top:12px;min-height:16px;text-align:center;}
+  .login-card .lc-forgot{font-family:'IBM Plex Mono';font-size:11px;color:var(--gold-ink);text-align:center;margin-top:14px;cursor:pointer;text-decoration:underline;}
 
   #topbar{position:sticky;top:0;z-index:300;background:var(--teal);color:var(--bone);display:flex;align-items:center;gap:12px;padding:10px 16px;flex-wrap:wrap;}
   #topbar .tb-brand{font-family:'Anton';font-size:17px;text-transform:uppercase;color:var(--gold);letter-spacing:.03em;}
@@ -391,11 +392,31 @@
   <div class="login-card">
     <div class="lc-brand"><span class="g">Laios</span> Group</div>
     <div class="lc-sub">Cotizador · acceso</div>
-    <label for="login-email">Correo</label>
-    <input id="login-email" type="email" autocomplete="username" placeholder="tucorreo@ejemplo.com">
-    <label for="login-pass">Contraseña</label>
-    <input id="login-pass" type="password" autocomplete="current-password" placeholder="••••••••">
-    <button class="lbtn" id="login-btn">Entrar</button>
+
+    <div id="login-fields">
+      <label for="login-email">Correo</label>
+      <input id="login-email" type="email" autocomplete="username" placeholder="tucorreo@ejemplo.com">
+      <label for="login-pass">Contraseña</label>
+      <input id="login-pass" type="password" autocomplete="current-password" placeholder="••••••••">
+      <button class="lbtn" id="login-btn">Entrar</button>
+      <div class="lc-forgot" id="forgot-link">¿Olvidaste tu contraseña?</div>
+    </div>
+
+    <div id="forgot-fields" style="display:none">
+      <label for="forgot-email">Correo</label>
+      <input id="forgot-email" type="email" autocomplete="username" placeholder="tucorreo@ejemplo.com">
+      <button class="lbtn" id="forgot-btn">Enviar enlace de recuperación</button>
+      <div class="lc-forgot" id="back-to-login">← Volver a entrar</div>
+    </div>
+
+    <div id="newpass-fields" style="display:none">
+      <label for="newpass-1">Nueva contraseña</label>
+      <input id="newpass-1" type="password" autocomplete="new-password" placeholder="••••••••">
+      <label for="newpass-2">Confirmar contraseña</label>
+      <input id="newpass-2" type="password" autocomplete="new-password" placeholder="••••••••">
+      <button class="lbtn" id="newpass-btn">Guardar nueva contraseña</button>
+    </div>
+
     <div class="lc-msg" id="login-msg"></div>
   </div>
 </div>
@@ -1109,6 +1130,29 @@
   window.addEventListener('orientationchange', fitPreview);
 
   /* ---- AUTH ---- */
+  function showLoginFields(){ $('login-fields').style.display=''; $('forgot-fields').style.display='none'; $('newpass-fields').style.display='none'; $('login-msg').textContent=''; }
+  function showForgotFields(){ $('login-fields').style.display='none'; $('forgot-fields').style.display=''; $('newpass-fields').style.display='none'; $('login-msg').textContent=''; }
+  function showNewPassFields(){ $('login-fields').style.display='none'; $('forgot-fields').style.display='none'; $('newpass-fields').style.display=''; $('login-msg').textContent=''; }
+  async function enviarRecuperacion(){
+    if(!sb){ $('login-msg').textContent='Sin conexión a Supabase.'; return; }
+    const email=$('forgot-email').value.trim();
+    if(!email){ $('login-msg').textContent='Escribe tu correo.'; return; }
+    $('login-msg').textContent='Enviando…';
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href.split('#')[0] });
+    if(error){ $('login-msg').textContent='Error: '+error.message; return; }
+    $('login-msg').textContent='Listo, revisa tu correo y haz clic en el enlace.';
+  }
+  async function guardarNuevaPass(){
+    const p1=$('newpass-1').value, p2=$('newpass-2').value;
+    if(!p1 || p1.length<6){ $('login-msg').textContent='Mínimo 6 caracteres.'; return; }
+    if(p1!==p2){ $('login-msg').textContent='Las contraseñas no coinciden.'; return; }
+    $('login-msg').textContent='Guardando…';
+    const { error } = await sb.auth.updateUser({ password:p1 });
+    if(error){ $('login-msg').textContent='Error: '+error.message; return; }
+    $('login-msg').textContent='Contraseña actualizada. Ya puedes usarla.';
+    $('newpass-1').value=''; $('newpass-2').value='';
+    setTimeout(showLoginFields, 1500);
+  }
   async function checkSession(){
     if(!sb){ showLogin(); $('login-msg').textContent='No se pudo conectar (revisa tu internet).'; return; }
     const { data } = await sb.auth.getSession();
@@ -1411,6 +1455,11 @@
   /* ---- WIRING ---- */
   $('login-btn').addEventListener('click', login);
   $('login-pass').addEventListener('keydown', e=>{ if(e.key==='Enter') login(); });
+  $('forgot-link').addEventListener('click', showForgotFields);
+  $('back-to-login').addEventListener('click', showLoginFields);
+  $('forgot-btn').addEventListener('click', enviarRecuperacion);
+  $('newpass-btn').addEventListener('click', guardarNuevaPass);
+  if(sb) sb.auth.onAuthStateChange((event)=>{ if(event==='PASSWORD_RECOVERY'){ showLogin(); showNewPassFields(); } });
   $('logout-btn').addEventListener('click', logout);
   $('nav-dash').addEventListener('click', viewDashboard);
   $('nav-cli').addEventListener('click', viewClientes);
