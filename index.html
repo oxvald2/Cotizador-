@@ -1040,6 +1040,7 @@
   /* ===================== CAPA SUPABASE / APP ===================== */
   const SB_URL = 'https://yfuhacfhgyzkkalullsm.supabase.co';
   const SB_KEY = 'sb_publishable_a5nwd1UC6GAoH1FJ53u4Zw_KEy_10qx';
+  const SITE_URL = 'https://oxvald2.github.io/Cotizador-/';
   let sb = null;
   try { sb = window.supabase.createClient(SB_URL, SB_KEY); }
   catch(e){ console.error('Supabase no cargó:', e); }
@@ -1138,7 +1139,7 @@
     const email=$('forgot-email').value.trim();
     if(!email){ $('login-msg').textContent='Escribe tu correo.'; return; }
     $('login-msg').textContent='Enviando…';
-    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href.split('#')[0] });
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: SITE_URL });
     if(error){ $('login-msg').textContent='Error: '+error.message; return; }
     $('login-msg').textContent='Listo, revisa tu correo y haz clic en el enlace.';
   }
