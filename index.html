@@ -329,6 +329,7 @@
   .venc{font-family:'IBM Plex Mono';font-size:8.5px;text-transform:uppercase;letter-spacing:.04em;padding:2px 6px;border-radius:5px;margin-left:4px;white-space:nowrap;}
   .venc.over{background:rgba(176,0,32,.14);color:#b00020;}
   .venc.soon{background:rgba(221,161,27,.2);color:#9a6b00;}
+  .venc.info{background:rgba(19,47,51,.1);color:var(--ink);}
   table.dt tr.overdue td{background:rgba(176,0,32,.04);}
   .dash-filters button{font-family:'IBM Plex Mono';font-size:11px;border:1px solid var(--line-2);background:var(--paper);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer;}
   .dash-filters button.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
@@ -1022,7 +1023,7 @@
   try { sb = window.supabase.createClient(SB_URL, SB_KEY); }
   catch(e){ console.error('Supabase no cargó:', e); }
 
-  let currentQuoteId = null, currentClienteId = null, currentEstado = 'borrador', currentUserEmail = '';
+  let currentQuoteId = null, currentClienteId = null, currentEstado = 'borrador', currentUserEmail = '', currentUserId = '';
   let clientesCache = [], dashData = [], dashFilter = 'todas', dashPeriod = 'mes', dashSort = {col:'created_at',dir:'desc'};
   let ncfSerie = 'B01', ncfSiguiente = 12;
   const nextNCF = ()=> ncfSerie + String(ncfSiguiente).padStart(8,'0');
@@ -1124,6 +1125,7 @@
   function onLoggedIn(session){
     $('login-msg').textContent=''; $('login-pass').value='';
     currentUserEmail = session.user.email || '';
+    currentUserId = session.user.id || '';
     $('user-email').textContent = displayName(session.user.email);
     showApp(); cargarTarifasBase(); cargarClientes(); viewDashboard();
   }
@@ -1234,7 +1236,7 @@
     try{
       let res;
       if(currentQuoteId) res=await sb.from('cotizaciones').update(row).eq('id',currentQuoteId).select('id,numero').single();
-      else { row.creado_por = currentUserEmail; res=await sb.from('cotizaciones').insert(row).select('id,numero').single(); }
+      else { row.creado_por = currentUserId; res=await sb.from('cotizaciones').insert(row).select('id,numero').single(); }
       if(res.error){ toast('Error: '+res.error.message, false); return; }
       currentQuoteId=res.data.id;
       updateBorrarBtn();
@@ -1259,7 +1261,7 @@
     if(!sb){ cont.innerHTML='<div class="dash-empty">Sin conexión.</div>'; return; }
     try{
       const { data, error } = await sb.from('cotizaciones')
-        .select('id,numero,cliente_nombre,proyecto,estado,moneda,total,total_enviada,enviada_at,updated_at,created_at,creado_por')
+        .select('id,numero,cliente_nombre,proyecto,estado,moneda,total,total_enviada,enviada_at,updated_at,created_at,creado_por,aceptada_at')
         .order('created_at',{ascending:false});
       if(error){ cont.innerHTML='<div class="dash-empty">Error: '+error.message+'</div>'; return; }
       dashData=data||[]; renderDashboard();
@@ -1276,6 +1278,15 @@
     return true;
   }
   const periodRows=()=>dashData.filter(q=>inPeriod(q,dashPeriod));
+  function inPeriodAceptada(q,p){
+    if(p==='todo') return !!q.aceptada_at;
+    const d=q.aceptada_at?new Date(q.aceptada_at):null; if(!d) return false;
+    const now=new Date();
+    if(p==='mes') return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
+    if(p==='mespasado'){ const m=new Date(now.getFullYear(),now.getMonth()-1,1); return d.getFullYear()===m.getFullYear()&&d.getMonth()===m.getMonth(); }
+    if(p==='ano') return d.getFullYear()===now.getFullYear();
+    return true;
+  }
   const sumTot=arr=>arr.reduce((s,q)=>s+Number(q.total||0),0);
   const fmtRD=n=>Number(n||0).toLocaleString('en-US',{maximumFractionDigits:0});
   const montoMes=(y,m)=>sumTot(dashData.filter(q=>{const d=q.created_at?new Date(q.created_at):null;return d&&d.getFullYear()===y&&d.getMonth()===m;}));
@@ -1291,6 +1302,7 @@
     const rows=periodRows();
     const monto=sumTot(rows), count=rows.length;
     const acc=rows.filter(q=>q.estado==='aceptada');
+    const accMes=dashData.filter(q=>q.estado==='aceptada' && inPeriodAceptada(q,dashPeriod));
     const sent=rows.filter(q=>['enviada','aceptada','vencida'].includes(q.estado)).length;
     const tasa= sent? Math.round(acc.length/sent*100):null;
     const now=new Date(); let delta=null;
@@ -1302,7 +1314,7 @@
     $('kpi-grid').innerHTML =
       card('Cotizado', `<span class="cur">RD$</span>${fmtRD(monto)}`, dHTML)+
       card('Cotizaciones', count, '<div class="kpi-d flat">en el período</div>')+
-      card('Aceptadas', acc.length, `<div class="kpi-d flat">RD$ ${fmtRD(sumTot(acc))}</div>`)+
+      card('Aceptadas', accMes.length, `<div class="kpi-d flat">RD$ ${fmtRD(sumTot(accMes))}</div>`)+
       card('Tasa de cierre', tasa==null?'—':tasa+'%', `<div class="kpi-d flat">${acc.length}/${sent} enviadas</div>`);
     renderChart();
   }
@@ -1323,15 +1335,22 @@
     'v.oxvald@gmail.com':'Osvaldo',
     'laracepp@gmail.com':'Laura'
   };
+  const NOMBRES_ID = {
+    'bae33fa5-8a0b-4d60-aa4f-7ed8a9105c26':'Osvaldo',
+    '3c9e4907-fc9d-4a46-8d7b-29312a06e6d9':'Laura'
+  };
   const displayName = e => { e=(e||'').toLowerCase(); return NOMBRES[e] || (e? e.split('@')[0] : '—'); };
   const CODIGO_BORRAR = '2580';   // ← código para autorizar borrar una cotización (cámbialo por el que quieras)
-  function porNombre(email){ return displayName(email); }
+  function porNombre(id){ return NOMBRES_ID[id] || (id? id.slice(0,8) : '—'); }
   async function cambiarEstado(id, nuevo){
     if(!sb) return;
-    const q=dashData.find(x=>x.id===id); if(!q) return; const prev=q.estado; q.estado=nuevo;
+    const q=dashData.find(x=>x.id===id); if(!q) return; const prev=q.estado; const prevAcept=q.aceptada_at; q.estado=nuevo;
+    const payload={estado:nuevo};
+    if(nuevo==='aceptada' && prev!=='aceptada'){ payload.aceptada_at=new Date().toISOString(); q.aceptada_at=payload.aceptada_at; }
+    else if(nuevo!=='aceptada' && prev==='aceptada'){ payload.aceptada_at=null; q.aceptada_at=null; }
     renderResumen(); renderDashTable();
-    const { error } = await sb.from('cotizaciones').update({estado:nuevo}).eq('id',id);
-    if(error){ q.estado=prev; renderResumen(); renderDashTable(); toast('No se pudo actualizar', false); }
+    const { error } = await sb.from('cotizaciones').update(payload).eq('id',id);
+    if(error){ q.estado=prev; q.aceptada_at=prevAcept; renderResumen(); renderDashTable(); toast('No se pudo actualizar', false); }
     else toast('Estado: '+nuevo);
   }
   function vencidasPendientes(){ return dashData.filter(q=>{ const v=vencInfo(q); return v && v.cls==='over'; }); }
@@ -1353,11 +1372,19 @@
     if(!rows.length){ cont.innerHTML='<div class="dash-empty">No hay cotizaciones en este período.</div>'; return; }
     const ar=c=> col===c?`<span class="ar">${dir==='asc'?'▲':'▼'}</span>`:'';
     const head=`<thead><tr><th data-c="numero">N.º${ar('numero')}</th><th data-c="cliente_nombre">Cliente${ar('cliente_nombre')}</th><th data-c="proyecto" class="hidem">Proyecto${ar('proyecto')}</th><th data-c="estado">Estado${ar('estado')}</th><th data-c="creado_por" class="hidem">Por${ar('creado_por')}</th><th data-c="total" class="num">Monto${ar('total')}</th><th data-c="created_at" class="hidem">Fecha${ar('created_at')}</th></tr></thead>`;
+    const ML=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
     const body=rows.map(q=>{
       const fecha=q.created_at?new Date(q.created_at).toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'}):'';
       const v=vencInfo(q); const chip=v?`<span class="venc ${v.cls}">${v.txt}</span>`:'';
+      let acBadge='';
+      if(q.estado==='aceptada' && q.aceptada_at && q.created_at){
+        const dc=new Date(q.created_at), da=new Date(q.aceptada_at);
+        if(dc.getFullYear()!==da.getFullYear() || dc.getMonth()!==da.getMonth()){
+          acBadge=`<span class="venc info" title="Cotizada ${ML[dc.getMonth()]} · aceptada ${ML[da.getMonth()]}">cot. ${ML[dc.getMonth()]} · acept. ${ML[da.getMonth()]}</span>`;
+        }
+      }
       const sel=`<select class="estado-sel b-${q.estado}" data-id="${q.id}">${ESTADOS.map(e=>`<option value="${e}" ${e===q.estado?'selected':''}>${e}</option>`).join('')}</select>`;
-      return `<tr class="dt-row ${v&&v.cls==='over'?'overdue':''}" data-open="${q.id}"><td class="dt-num">${q.numero||'—'} ${chip}</td><td>${q.cliente_nombre||'—'}</td><td class="hidem">${q.proyecto||'—'}</td><td>${sel}</td><td class="hidem">${porNombre(q.creado_por)}</td><td class="num">RD$ ${fmtRD(q.total)}</td><td class="hidem">${fecha}</td></tr>`;
+      return `<tr class="dt-row ${v&&v.cls==='over'?'overdue':''}" data-open="${q.id}"><td class="dt-num">${q.numero||'—'} ${chip}</td><td>${q.cliente_nombre||'—'}</td><td class="hidem">${q.proyecto||'—'}</td><td>${sel} ${acBadge}</td><td class="hidem">${porNombre(q.creado_por)}</td><td class="num">RD$ ${fmtRD(q.total)}</td><td class="hidem">${fecha}</td></tr>`;
     }).join('');
     cont.innerHTML=`<div class="table-wrap"><table class="dt">${head}<tbody>${body}</tbody></table></div>`;
     cont.querySelectorAll('th[data-c]').forEach(th=>th.addEventListener('click',()=>{ const c=th.dataset.c; if(dashSort.col===c) dashSort.dir=dashSort.dir==='asc'?'desc':'asc'; else dashSort={col:c,dir:(c==='total'||c==='created_at')?'desc':'asc'}; renderDashTable(); }));
