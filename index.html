@@ -256,6 +256,10 @@
   .login-card label{display:block;font-size:12px;font-weight:600;color:var(--ink);margin:12px 0 5px;}
   .login-card input{width:100%;border:1px solid var(--line-2);border-radius:8px;padding:11px 12px;font-family:'IBM Plex Mono';font-size:14px;background:#fff;color:var(--ink);}
   .login-card input:focus{outline:none;border-color:var(--gold);}
+  .pass-wrap{position:relative;}
+  .pass-wrap input{padding-right:44px;}
+  .pass-toggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;padding:6px 8px;cursor:pointer;font-size:16px;line-height:1;color:var(--gold-ink);opacity:.75;}
+  .pass-toggle:hover{opacity:1;}
   .login-card .lbtn{width:100%;margin-top:18px;background:var(--gold);color:var(--teal);border:none;border-radius:999px;padding:12px;font-family:'IBM Plex Mono';font-weight:600;font-size:13px;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;}
   .login-card .lc-msg{font-size:12px;color:#b00;margin-top:12px;min-height:16px;text-align:center;}
   .login-card .lc-forgot{font-family:'IBM Plex Mono';font-size:11px;color:var(--gold-ink);text-align:center;margin-top:14px;cursor:pointer;text-decoration:underline;}
@@ -273,6 +277,7 @@
 
   #dashboard-view{padding:20px 16px 60px;max-width:760px;margin:0 auto;}
   #clientes-view{padding:20px 16px 60px;max-width:760px;margin:0 auto;}
+  .cli-title{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-ink);margin-bottom:14px;}
   .ghost-back{background:none;border:none;color:var(--teal);font-family:'IBM Plex Mono';font-size:12px;cursor:pointer;padding:6px 0;margin-bottom:10px;}
   .cli-card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:18px 18px 20px;margin-bottom:20px;}
   .cli-card .field{margin-bottom:14px;}
@@ -397,7 +402,10 @@
       <label for="login-email">Correo</label>
       <input id="login-email" type="email" autocomplete="username" placeholder="tucorreo@ejemplo.com">
       <label for="login-pass">Contraseña</label>
-      <input id="login-pass" type="password" autocomplete="current-password" placeholder="••••••••">
+      <div class="pass-wrap">
+        <input id="login-pass" type="password" autocomplete="current-password" placeholder="••••••••">
+        <button type="button" class="pass-toggle" id="toggle-pass" aria-label="Mostrar contraseña">👁</button>
+      </div>
       <button class="lbtn" id="login-btn">Entrar</button>
       <div class="lc-forgot" id="forgot-link">¿Olvidaste tu contraseña?</div>
     </div>
@@ -473,13 +481,16 @@
     <div id="cli-detail" style="display:none">
       <button class="ghost-back" id="cli-back">← Volver a clientes</button>
       <div class="cli-card">
+        <div class="cli-title" id="cd-title">Editar cliente</div>
         <div class="field"><label for="cd-nombre">Nombre</label><input type="text" id="cd-nombre"></div>
         <div class="field"><label for="cd-contacto">Contacto</label><input type="text" id="cd-contacto"></div>
         <div class="field"><label for="cd-rnc">RNC / Cédula</label><input type="text" id="cd-rnc"></div>
         <button class="dash-new" id="cd-save">Guardar cambios</button>
       </div>
-      <div class="sec-h"><span class="st">Cotizaciones de este cliente</span><span class="sm" id="cli-cots-count">—</span></div>
-      <div id="cli-cots"></div>
+      <div id="cli-cots-section">
+        <div class="sec-h"><span class="st">Cotizaciones de este cliente</span><span class="sm" id="cli-cots-count">—</span></div>
+        <div id="cli-cots"></div>
+      </div>
     </div>
   </section>
 
@@ -1042,7 +1053,9 @@
   const SB_KEY = 'sb_publishable_a5nwd1UC6GAoH1FJ53u4Zw_KEy_10qx';
   const SITE_URL = 'https://oxvald2.github.io/Cotizador-/';
   let sb = null;
-  try { sb = window.supabase.createClient(SB_URL, SB_KEY); }
+  try { sb = window.supabase.createClient(SB_URL, SB_KEY, {
+    auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, storage: window.localStorage }
+  }); }
   catch(e){ console.error('Supabase no cargó:', e); }
 
   let currentQuoteId = null, currentClienteId = null, currentEstado = 'borrador', currentUserEmail = '', currentUserId = '';
@@ -1082,6 +1095,8 @@
   async function abrirCliente(id){
     const c=clientesCache.find(x=>x.id===id); if(!c) return;
     cliDetailId=id;
+    $('cd-title').textContent='Editar cliente'; $('cd-save').textContent='Guardar cambios';
+    showEl('cli-cots-section');
     $('cd-nombre').value=c.nombre||''; $('cd-contacto').value=c.contacto||''; $('cd-rnc').value=c.rnc||'';
     hideEl('cli-list-wrap'); showEl('cli-detail');
     $('cli-cots').innerHTML='<div class="dash-empty">Cargando…</div>'; $('cli-cots-count').textContent='—';
@@ -1096,22 +1111,28 @@
     }catch(e){ $('cli-cots').innerHTML='<div class="dash-empty">Error de conexión.</div>'; }
   }
   async function guardarCliente(){
-    if(!sb||!cliDetailId) return;
-    const upd={ nombre:$('cd-nombre').value.trim(), contacto:$('cd-contacto').value.trim()||null, rnc:$('cd-rnc').value.trim()||null };
-    if(!upd.nombre){ toast('El nombre no puede estar vacío', false); return; }
-    const { error } = await sb.from('clientes').update(upd).eq('id',cliDetailId);
-    if(error){ toast('Error guardando', false); return; }
-    const c=clientesCache.find(x=>x.id===cliDetailId); if(c) Object.assign(c,upd);
-    await cargarClientes(); toast('Cliente actualizado');
-  }
-  async function nuevoClienteEnLista(){
     if(!sb) return toast('Sin conexión', false);
-    const nombre=prompt('Nombre del nuevo cliente:'); if(!nombre) return;
-    const contacto=prompt('Contacto (opcional):')||null;
-    const rnc=prompt('RNC / Cédula (opcional):')||null;
-    const { error } = await sb.from('clientes').insert({nombre, contacto, rnc});
-    if(error){ toast('Error creando cliente', false); return; }
-    await cargarClientes(); renderClientesList(); toast('Cliente creado');
+    const datos={ nombre:$('cd-nombre').value.trim(), contacto:$('cd-contacto').value.trim()||null, rnc:$('cd-rnc').value.trim()||null };
+    if(!datos.nombre){ toast('El nombre no puede estar vacío', false); return; }
+    if(cliDetailId){
+      const { error } = await sb.from('clientes').update(datos).eq('id',cliDetailId);
+      if(error){ toast('Error guardando', false); return; }
+      const c=clientesCache.find(x=>x.id===cliDetailId); if(c) Object.assign(c,datos);
+      await cargarClientes(); toast('Cliente actualizado');
+    } else {
+      const { error } = await sb.from('clientes').insert(datos);
+      if(error){ toast('Error creando cliente', false); return; }
+      await cargarClientes(); mostrarListaClientes(); toast('Cliente creado');
+    }
+  }
+  function nuevoClienteEnLista(){
+    if(!sb) return toast('Sin conexión', false);
+    cliDetailId=null;
+    $('cd-title').textContent='Nuevo cliente'; $('cd-save').textContent='Crear cliente';
+    $('cd-nombre').value=''; $('cd-contacto').value=''; $('cd-rnc').value='';
+    hideEl('cli-cots-section');
+    hideEl('cli-list-wrap'); showEl('cli-detail');
+    $('cd-nombre').focus();
   }
 
   /* la hoja (8.5in) entra completa en pantallas chicas; el zoom con dedos queda libre */
@@ -1157,18 +1178,38 @@
   async function checkSession(){
     if(!sb){ showLogin(); $('login-msg').textContent='No se pudo conectar (revisa tu internet).'; return; }
     const { data } = await sb.auth.getSession();
-    if(data && data.session) onLoggedIn(data.session); else showLogin();
+    if(data && data.session){ onLoggedIn(data.session); }
+    else { try{ const em=localStorage.getItem('laios_email'); if(em && !$('login-email').value){ $('login-email').value=em; $('login-pass').focus(); } }catch(e){} showLogin(); }
   }
-  async function login(){
+  function isNetErr(e){
+    const m=((e&&(e.message||e.name))||'').toString().toLowerCase();
+    return m.includes('load failed')||m.includes('failed to fetch')||m.includes('fetch')||m.includes('network');
+  }
+  async function login(attempt){
+    attempt = typeof attempt==='number' ? attempt : 0;
     if(!sb){ $('login-msg').textContent='Sin conexión a Supabase.'; return; }
     const email=$('login-email').value.trim(), password=$('login-pass').value;
-    $('login-msg').textContent='Entrando…';
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
-    if(error){ $('login-msg').textContent='Error: '+error.message; return; }
-    onLoggedIn(data.session);
+    if(!email || !password){ $('login-msg').textContent='Escribe tu correo y contraseña.'; return; }
+    $('login-msg').style.color=''; 
+    $('login-msg').textContent = attempt>0 ? 'El servidor está despertando… reintentando ('+attempt+'/3)' : 'Entrando…';
+    try{
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if(error){
+        if(isNetErr(error) && attempt<3){ setTimeout(()=>login(attempt+1), 4000); return; }
+        $('login-msg').textContent = isNetErr(error)
+          ? 'No hay conexión con el servidor. Puede estar despertando: espera ~30 s y reintenta.'
+          : 'Error: '+error.message;
+        return;
+      }
+      onLoggedIn(data.session);
+    }catch(e){
+      if(isNetErr(e) && attempt<3){ setTimeout(()=>login(attempt+1), 4000); return; }
+      $('login-msg').textContent='No se pudo conectar. Revisa tu internet o espera unos segundos (el servidor puede estar despertando).';
+    }
   }
   function onLoggedIn(session){
     $('login-msg').textContent=''; $('login-pass').value='';
+    try{ localStorage.setItem('laios_email', session.user.email||''); }catch(e){}
     currentUserEmail = session.user.email || '';
     currentUserId = session.user.id || '';
     $('user-email').textContent = displayName(session.user.email);
@@ -1454,8 +1495,16 @@
   }
 
   /* ---- WIRING ---- */
-  $('login-btn').addEventListener('click', login);
+  $('login-btn').addEventListener('click', ()=>login());
   $('login-pass').addEventListener('keydown', e=>{ if(e.key==='Enter') login(); });
+  $('toggle-pass').addEventListener('click', ()=>{
+    const p=$('login-pass'), b=$('toggle-pass');
+    const show = p.type==='password';
+    p.type = show?'text':'password';
+    b.textContent = show?'🙈':'👁';
+    b.setAttribute('aria-label', show?'Ocultar contraseña':'Mostrar contraseña');
+    p.focus();
+  });
   $('forgot-link').addEventListener('click', showForgotFields);
   $('back-to-login').addEventListener('click', showLoginFields);
   $('forgot-btn').addEventListener('click', enviarRecuperacion);
