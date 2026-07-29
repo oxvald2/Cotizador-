@@ -1,0 +1,23 @@
+name: Keep Supabase Awake
+
+on:
+  schedule:
+    - cron: '0 13 * * 1,4'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping a la base de datos
+        run: |
+          echo "Enviando ping a Supabase..."
+          HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://yfuhacfhgyzkkalullsm.supabase.co/rest/v1/clientes?select=id&limit=1" \
+            -H "apikey: sb_publishable_a5nwd1UC6GAoH1FJ53u4Zw_KEy_10qx")
+          echo "Codigo HTTP: $HTTP"
+          if [ "$HTTP" = "200" ]; then
+            echo "OK - la base sigue activa."
+          else
+            echo "Aviso: respuesta $HTTP"; exit 1
+          fi
