@@ -84,6 +84,19 @@
   .rrow{display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:10px 12px;margin-bottom:8px;}
   .badge{font-family:'IBM Plex Mono';font-size:8px;font-weight:600;text-transform:uppercase;padding:3px 7px;border-radius:99px;flex-shrink:0;}
   .badge.planos{background:#e7eef0;color:var(--teal);} .badge.remod{background:#fbf0d6;color:#8a6a12;}
+  .est{font-family:'IBM Plex Mono';font-size:8px;font-weight:600;text-transform:uppercase;padding:2px 6px;border-radius:99px;}
+  .est.borrador{background:#eeeae0;color:#8f897a;} .est.enviada{background:#fbf0d6;color:#8a6a12;} .est.aceptada{background:#e6f0e6;color:var(--ok);} .est.vencida{background:#f3e0e0;color:#9a3b3b;}
+  .rrow .m .s{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .rrow{cursor:pointer;}
+  .cli-hero{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+  .cli-hero .av{width:50px;height:50px;border-radius:50%;background:var(--teal-soft);color:var(--gold);display:grid;place-items:center;font-family:'Anton';font-size:20px;flex-shrink:0;}
+  .cli-hero .n{font-family:'Anton';font-size:19px;text-transform:uppercase;}
+  .cli-hero .s{font-family:'IBM Plex Mono';font-size:10px;color:var(--gray-2);}
+  .edit-link{background:none;border:1px solid var(--line-2);border-radius:7px;padding:7px 12px;font-family:'IBM Plex Mono';font-size:10px;font-weight:600;color:var(--ink);cursor:pointer;}
+  .cli-kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+  .cli-kpi{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;}
+  .cli-kpi .l{font-family:'IBM Plex Mono';font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-2);}
+  .cli-kpi .v{font-family:'Anton';font-size:17px;margin-top:2px;}
   .rrow .m{flex:1;min-width:0;} .rrow .m .n{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .rrow .m .s{font-family:'IBM Plex Mono';font-size:10px;color:var(--gray-2);}
   .rrow .amt{font-family:'IBM Plex Mono';font-weight:600;font-size:13px;white-space:nowrap;}
@@ -412,6 +425,15 @@
   const sumUsd=arr=>arr.filter(r=>esUSD(r)).reduce((s,r)=>s+(Number(r.total)||0),0);
 
   // ================= DASHBOARD =================
+  const estBadge=est=>'<span class="est '+(est||'borrador')+'">'+(est||'borrador')+'</span>';
+  function fmtFecha(d){ if(!d) return ''; const dt=new Date(d), now=new Date(); const dias=Math.floor((now-dt)/86400000); if(dias<=0) return 'hoy'; if(dias===1) return 'ayer'; if(dias<30) return 'hace '+dias+' días'; return dt.toLocaleDateString('es-DO',{day:'2-digit',month:'short'}); }
+  function quoteRow(r){
+    return '<div class="rrow" data-openrow data-tipo="'+r.tipo+'" data-rid="'+(r.id||'')+'"><span class="badge '+r.tipo+'">'+(r.tipo==='planos'?'Planos':'Remod')+'</span>'+
+      '<div class="m"><div class="n">'+esc(r.cliente_nombre||r.proyecto||'—')+'</div><div class="s">'+esc(r.numero||'—')+' '+estBadge(r.estado)+' · '+fmtFecha(r.created_at)+'</div></div>'+
+      '<div class="amt">'+(esUSD(r)?'US$ ':'RD$ ')+Number(Math.round(r.total||0)).toLocaleString('en-US')+'</div></div>';
+  }
+  function abrirCotiz(tipo,rid){ if(tipo==='remod'&&rid) RemodMod.abrir(rid); else abrirModulo('planos', rid||null); }
+
   function renderDash(){
     const rows=allQuotes.filter(r=>inPeriod(r.created_at,dashPeriod));
     const planos=rows.filter(r=>r.tipo==='planos'), remod=rows.filter(r=>r.tipo==='remod');
@@ -422,10 +444,7 @@
     const vals=meses.map(mm=>sumDop(allQuotes.filter(r=>{const d=r.created_at?new Date(r.created_at):null;return d&&d.getFullYear()===mm.y&&d.getMonth()===mm.m;})));
     const max=Math.max(...vals,1);
     const barsHTML=meses.map((mm,i)=>'<div class="bcol"><div class="bar'+(i===5?' gold':'')+'" style="height:'+Math.max(2,Math.round(vals[i]/max*100))+'%"></div><div class="bl">'+mm.lbl+'</div></div>').join('');
-    const recientes=rows.slice(0,8).map(r=>{
-      const est=r.estado||'borrador';
-      return '<div class="rrow"><span class="badge '+r.tipo+'">'+(r.tipo==='planos'?'Planos':'Remod')+'</span><div class="m"><div class="n">'+esc(r.cliente_nombre||r.proyecto||'—')+'</div><div class="s">'+esc(r.numero||'—')+' · '+est+'</div></div><div class="amt">'+(esUSD(r)?'US$ ':'RD$ ')+Number(Math.round(r.total||0)).toLocaleString('en-US')+'</div></div>';
-    }).join('') || '<div class="empty">Sin cotizaciones en este período.</div>';
+    const recientes=rows.slice(0,8).map(r=>quoteRow(r)).join('') || '<div class="empty">Sin cotizaciones en este período.</div>';
     const P=[['semana','Semana'],['mes','Mes'],['ano','Año'],['todo','Todo']];
     $('v-dash').innerHTML=
       '<div class="h1-row"><div class="h1">Dashboard</div></div>'+
@@ -435,21 +454,33 @@
       '<div class="chart"><div class="t">Cotizado por mes · últimos 6</div><div class="bars">'+barsHTML+'</div></div>'+
       '<div class="sec-h">Actividad reciente</div>'+recientes;
   }
-  $('v-dash').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b&&b.dataset.p){ dashPeriod=b.dataset.p; renderDash(); } });
+  $('v-dash').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b&&b.dataset.p){ dashPeriod=b.dataset.p; renderDash(); return; } const row=e.target.closest('[data-openrow]'); if(row){ abrirCotiz(row.dataset.tipo, row.dataset.rid); } });
 
   // ================= CLIENTES =================
-  function contarCot(cid){ return allQuotes.filter(q=>q.cliente_id===cid).length; }
+  const cotsCliente=cid=>allQuotes.filter(q=>q.cliente_id===cid);
   function renderClientes(){
     cliDetailId=undefined;
     const lista=clientes.length? clientes.map(c=>{
-      const n=contarCot(c.id);
+      const n=cotsCliente(c.id).length;
       return '<div class="cli" data-cli="'+c.id+'"><div class="av">'+esc((c.nombre||'?')[0].toUpperCase())+'</div><div class="m"><div class="n">'+esc(c.nombre)+'</div><div class="s">'+n+' cotización(es)'+(c.rnc?' · RNC '+esc(c.rnc):'')+'</div></div></div>';
     }).join('') : '<div class="empty">Aún no tienes clientes. Toca "+ Nuevo".</div>';
     $('v-cli').innerHTML='<div class="h1-row"><div class="h1">Clientes</div><button class="newbtn" id="cli-new">+ Nuevo</button></div><div id="cli-body">'+lista+'</div>';
   }
+  function renderClienteDetalle(c){
+    cliDetailId=c.id;
+    const cots=cotsCliente(c.id);
+    const totDop=cots.filter(q=>!esUSD(q)).reduce((s,q)=>s+(Number(q.total)||0),0);
+    const hist= cots.length? cots.map(r=>quoteRow(r)).join('') : '<div class="empty">Este cliente aún no tiene cotizaciones.</div>';
+    const sub=[c.rnc?'RNC '+esc(c.rnc):'', c.contacto?esc(c.contacto):''].filter(Boolean).join(' · ')||'—';
+    $('v-cli').innerHTML='<button class="edit-link" id="cli-back-list" style="margin-bottom:12px">← Clientes</button>'+
+      '<div class="cli-hero"><div class="av">'+esc((c.nombre||'?')[0].toUpperCase())+'</div><div style="flex:1"><div class="n">'+esc(c.nombre)+'</div><div class="s">'+sub+'</div></div><button class="edit-link" id="cli-editar">Editar</button></div>'+
+      '<div class="cli-kpis"><div class="cli-kpi"><div class="l">Total cotizado</div><div class="v">'+fmtShort(totDop)+'</div></div><div class="cli-kpi"><div class="l">Cotizaciones</div><div class="v">'+cots.length+'</div></div></div>'+
+      '<div class="sec-h">Historial de cotizaciones</div>'+hist;
+  }
   function formCliente(c){
     cliDetailId=c?c.id:null;
-    $('v-cli').innerHTML='<div class="h1-row"><div class="h1">'+(c?'Editar':'Nuevo')+' cliente</div><button class="newbtn" id="cli-volver" style="background:#eae6da;color:var(--ink)">← Volver</button></div>'+
+    const backId = c?'cli-back-detalle':'cli-back-list';
+    $('v-cli').innerHTML='<div class="h1-row"><div class="h1">'+(c?'Editar':'Nuevo')+' cliente</div><button class="newbtn" id="'+backId+'" style="background:#eae6da;color:var(--ink)">← Volver</button></div>'+
       '<div class="cli-card"><div class="cli-title">'+(c?'Editar cliente':'Nuevo cliente')+'</div>'+
       '<div class="field"><label>Nombre</label><input id="c-nombre" value="'+esc(c?c.nombre:'')+'"></div>'+
       '<div class="field"><label>Contacto</label><input id="c-contacto" value="'+esc(c?c.contacto:'')+'"></div>'+
@@ -458,26 +489,25 @@
   }
   $('v-cli').addEventListener('click',e=>{
     if(e.target.id==='cli-new'){ formCliente(null); return; }
-    if(e.target.id==='cli-volver'){ renderClientes(); return; }
+    if(e.target.id==='cli-back-list'){ renderClientes(); return; }
+    if(e.target.id==='cli-back-detalle'){ const c=clientes.find(x=>x.id===cliDetailId); if(c) renderClienteDetalle(c); else renderClientes(); return; }
+    if(e.target.id==='cli-editar'){ const c=clientes.find(x=>x.id===cliDetailId); if(c) formCliente(c); return; }
     if(e.target.id==='c-save'){ guardarCliente(); return; }
-    const c=e.target.closest('[data-cli]'); if(c){ const cl=clientes.find(x=>x.id===c.dataset.cli); if(cl) formCliente(cl); }
+    const row=e.target.closest('[data-openrow]'); if(row){ abrirCotiz(row.dataset.tipo, row.dataset.rid); return; }
+    const c=e.target.closest('[data-cli]'); if(c){ const cl=clientes.find(x=>x.id===c.dataset.cli); if(cl) renderClienteDetalle(cl); }
   });
   async function guardarCliente(){
     const datos={nombre:$('c-nombre').value.trim(),contacto:$('c-contacto').value.trim()||null,rnc:$('c-rnc').value.trim()||null};
     if(!datos.nombre){ toast('El nombre no puede estar vacío',true); return; }
     try{
-      if(cliDetailId){ const {error}=await sb.from('clientes').update(datos).eq('id',cliDetailId); if(error){toast('Error al guardar',true);return;} const c=clientes.find(x=>x.id===cliDetailId); if(c)Object.assign(c,datos); toast('Cliente actualizado'); }
-      else { const {data,error}=await sb.from('clientes').insert(datos).select().single(); if(error){toast('Error al crear',true);return;} clientes.push(data); clientes.sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||'')); toast('Cliente creado'); }
-      renderClientes();
+      if(cliDetailId){ const {error}=await sb.from('clientes').update(datos).eq('id',cliDetailId); if(error){toast('Error al guardar',true);return;} const c=clientes.find(x=>x.id===cliDetailId); if(c)Object.assign(c,datos); toast('Cliente actualizado'); renderClienteDetalle(clientes.find(x=>x.id===cliDetailId)); }
+      else { const {data,error}=await sb.from('clientes').insert(datos).select().single(); if(error){toast('Error al crear',true);return;} clientes.push(data); clientes.sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||'')); toast('Cliente creado'); renderClientes(); }
     }catch(e){ toast('Error de conexión',true); }
   }
 
   // ================= COTIZAR =================
   function renderCotizar(){
-    const recientes=allQuotes.slice(0,6).map(r=>{
-      const est=r.estado||'borrador';
-      return '<div class="rrow" data-openrow data-tipo="'+r.tipo+'" data-rid="'+(r.id||'')+'"><span class="badge '+r.tipo+'">'+(r.tipo==='planos'?'Planos':'Remod')+'</span><div class="m"><div class="n">'+esc(r.cliente_nombre||r.proyecto||'—')+'</div><div class="s">'+esc(r.numero||'—')+' · '+est+'</div></div><div class="amt">'+(esUSD(r)?'US$ ':'RD$ ')+Number(Math.round(r.total||0)).toLocaleString('en-US')+'</div></div>';
-    }).join('') || '<div class="empty">Aún no hay cotizaciones.</div>';
+    const recientes=allQuotes.slice(0,6).map(r=>quoteRow(r)).join('') || '<div class="empty">Aún no hay cotizaciones.</div>';
     $('v-cot').innerHTML='<div class="h1-row"><div class="h1">Cotizar</div></div>'+
       '<div class="cot-cards">'+
         '<div class="cot-card" data-go="planos"><div class="ic">'+svg('cot',24)+'</div><div class="t"><div class="n">Nueva de planos</div><div class="d">Honorarios de diseño y arquitectura</div></div></div>'+
