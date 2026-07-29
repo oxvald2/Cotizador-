@@ -108,6 +108,8 @@
   .cot-card .ic svg{stroke:var(--gold);width:24px;height:24px;}
   .cot-card.rem .ic{background:var(--gold);} .cot-card.rem .ic svg{stroke:var(--teal);}
   .cot-card .t .n{font-family:'Archivo';font-weight:700;font-size:17px;} .cot-card .t .d{font-family:'IBM Plex Mono';font-size:11px;color:var(--gray-2);margin-top:2px;}
+  .cot-card.soon{opacity:.62;} .cot-card.soon .ic{background:var(--line-2);} .cot-card.soon .ic svg{stroke:var(--gray-2);}
+  .soon-tag{font-family:'IBM Plex Mono';font-size:8px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;background:#eae6da;color:var(--gray-2);padding:2px 7px;border-radius:99px;margin-left:6px;vertical-align:middle;}
 
   /* EMBED */
   #embed{position:fixed;inset:0;z-index:80;display:flex;flex-direction:column;background:#cdc8bb;}
@@ -480,11 +482,12 @@
       '<div class="cot-cards">'+
         '<div class="cot-card" data-go="planos"><div class="ic">'+svg('cot',24)+'</div><div class="t"><div class="n">Nueva de planos</div><div class="d">Honorarios de diseño y arquitectura</div></div></div>'+
         '<div class="cot-card rem" data-go="remod"><div class="ic">'+svg('cot',24)+'</div><div class="t"><div class="n">Nueva remodelación</div><div class="d">Levantamiento por espacios y partidas</div></div></div>'+
+        '<div class="cot-card soon" data-go="construccion"><div class="ic">'+svg('cot',24)+'</div><div class="t"><div class="n">Nueva construcción <span class="soon-tag">Próximamente</span></div><div class="d">Presupuesto de obra por partidas</div></div></div>'+
       '</div>'+
       '<div class="sec-h">Últimas cotizaciones</div>'+recientes;
   }
   $('v-cot').addEventListener('click',e=>{
-    const card=e.target.closest('[data-go]'); if(card){ const go=card.dataset.go; if(go==='remod') RemodMod.nuevo(); else abrirModulo('planos'); return; }
+    const card=e.target.closest('[data-go]'); if(card){ const go=card.dataset.go; if(go==='remod') RemodMod.nuevo(); else if(go==='construccion') toast('Construcción — próximamente'); else abrirModulo('planos'); return; }
     const row=e.target.closest('[data-openrow]'); if(row){ const tipo=row.dataset.tipo, rid=row.dataset.rid; if(tipo==='remod'&&rid) RemodMod.abrir(rid); else abrirModulo('planos', rid||null); }
   });
 
