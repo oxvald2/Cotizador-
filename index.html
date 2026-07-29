@@ -293,6 +293,8 @@
   .period-seg button{font-family:'IBM Plex Mono';font-size:11px;font-weight:600;border:none;background:transparent;color:var(--ink);padding:7px 13px;border-radius:999px;cursor:pointer;}
   .period-seg button.active{background:var(--ink);color:var(--paper);}
   .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+  .dash-alert{display:flex;align-items:center;gap:8px;background:#fdf1e3;border:1px solid #e8c48a;color:#7a4b12;border-radius:12px;padding:11px 14px;margin-bottom:14px;font-family:'IBM Plex Mono';font-size:12px;line-height:1.4;cursor:pointer;}
+  .dash-alert b{font-weight:600;}
   .kpi{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:13px 14px;}
   .kpi-l{font-family:'IBM Plex Mono';font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-2);}
   .kpi-v{font-family:'Anton';font-size:24px;color:var(--ink);margin-top:6px;letter-spacing:.01em;line-height:1;font-variant-numeric:tabular-nums;}
@@ -456,6 +458,7 @@
       <button data-p="ano">Este año</button>
       <button data-p="todo">Todo</button>
     </div>
+    <div class="dash-alert" id="dash-alert" style="display:none"></div>
     <div class="kpi-grid" id="kpi-grid"></div>
     <div class="cb"><div class="cb-head"><span>Cotizado por mes</span><span class="cb-sub">últimos 6 meses</span></div><div id="bar-chart" class="bars"></div></div>
     <div class="sec-h2 sec-h2-row"><span>Cotizaciones del período</span><button class="btn-venc" id="btn-venc" style="display:none"></button></div>
@@ -1375,8 +1378,8 @@
   }
   const sumTot=arr=>arr.reduce((s,q)=>s+Number(q.total||0),0);
   const fmtRD=n=>Number(n||0).toLocaleString('en-US',{maximumFractionDigits:0});
-  const montoMes=(y,m)=>sumTot(dashData.filter(q=>{const d=q.created_at?new Date(q.created_at):null;return d&&d.getFullYear()===y&&d.getMonth()===m;}));
-  const montoAno=y=>sumTot(dashData.filter(q=>{const d=q.created_at?new Date(q.created_at):null;return d&&d.getFullYear()===y;}));
+  const montoMes=(y,m)=>sumaMoneda(dashData.filter(q=>{const d=q.created_at?new Date(q.created_at):null;return d&&d.getFullYear()===y&&d.getMonth()===m;})).dop;
+  const montoAno=y=>sumaMoneda(dashData.filter(q=>{const d=q.created_at?new Date(q.created_at):null;return d&&d.getFullYear()===y;})).dop;
   function pctDelta(cur,prev){
     if(!prev) return cur>0?{cls:'up',txt:'▲ nuevo'}:{cls:'flat',txt:'—'};
     const p=Math.round((cur-prev)/prev*100);
@@ -1384,25 +1387,50 @@
     if(p<0) return {cls:'down',txt:'▼ '+Math.abs(p)+'% vs anterior'};
     return {cls:'flat',txt:'= igual'};
   }
+  const esUSD = q => (q.moneda||'').toUpperCase()==='USD';
+  function sumaMoneda(arr){ let dop=0, usd=0; arr.forEach(q=>{ const t=Number(q.total||0); if(esUSD(q)) usd+=t; else dop+=t; }); return {dop,usd}; }
+  const usdNota = m => m.usd>0 ? `<div class="kpi-d flat">+ US$ ${fmtRD(m.usd)}</div>` : '';
   function renderResumen(){
     const rows=periodRows();
-    const monto=sumTot(rows), count=rows.length;
+    const cot=sumaMoneda(rows), count=rows.length;
+    const enviadaRows=rows.filter(q=>q.estado==='enviada');
+    const pend=sumaMoneda(enviadaRows);
     const acc=rows.filter(q=>q.estado==='aceptada');
     const accMes=dashData.filter(q=>q.estado==='aceptada' && inPeriodAceptada(q,dashPeriod));
+    const accMonto=sumaMoneda(accMes);
     const sent=rows.filter(q=>['enviada','aceptada','vencida'].includes(q.estado)).length;
     const tasa= sent? Math.round(acc.length/sent*100):null;
+    const dopRows=rows.filter(q=>!esUSD(q));
+    const ticket = dopRows.length? Math.round(cot.dop/dopRows.length) : null;
     const now=new Date(); let delta=null;
-    if(dashPeriod==='mes') delta=pctDelta(monto, montoMes(now.getFullYear(), now.getMonth()-1<0?now.getMonth()+11:now.getMonth()-1));
-    else if(dashPeriod==='mespasado'){ const b=new Date(now.getFullYear(),now.getMonth()-1,1), pv=new Date(b.getFullYear(),b.getMonth()-1,1); delta=pctDelta(monto, montoMes(pv.getFullYear(),pv.getMonth())); }
-    else if(dashPeriod==='ano') delta=pctDelta(monto, montoAno(now.getFullYear()-1));
-    const dHTML = delta? `<div class="kpi-d ${delta.cls}">${delta.txt}</div>` : '';
+    if(dashPeriod==='mes') delta=pctDelta(cot.dop, montoMes(now.getFullYear(), now.getMonth()-1<0?now.getMonth()+11:now.getMonth()-1));
+    else if(dashPeriod==='mespasado'){ const b=new Date(now.getFullYear(),now.getMonth()-1,1), pv=new Date(b.getFullYear(),b.getMonth()-1,1); delta=pctDelta(cot.dop, montoMes(pv.getFullYear(),pv.getMonth())); }
+    else if(dashPeriod==='ano') delta=pctDelta(cot.dop, montoAno(now.getFullYear()-1));
+    const dHTML = (delta? `<div class="kpi-d ${delta.cls}">${delta.txt}</div>`:'') + usdNota(cot);
     const card=(l,v,extra='')=>`<div class="kpi"><div class="kpi-l">${l}</div><div class="kpi-v">${v}</div>${extra}</div>`;
     $('kpi-grid').innerHTML =
-      card('Cotizado', `<span class="cur">RD$</span>${fmtRD(monto)}`, dHTML)+
+      card('Cotizado', `<span class="cur">RD$</span>${fmtRD(cot.dop)}`, dHTML)+
       card('Cotizaciones', count, '<div class="kpi-d flat">en el período</div>')+
-      card('Aceptadas', accMes.length, `<div class="kpi-d flat">RD$ ${fmtRD(sumTot(accMes))}</div>`)+
+      card('Pendiente', `<span class="cur">RD$</span>${fmtRD(pend.dop)}`, `<div class="kpi-d flat">${enviadaRows.length} en juego</div>`+usdNota(pend))+
+      card('Aceptadas', accMes.length, `<div class="kpi-d flat">RD$ ${fmtRD(accMonto.dop)}</div>`+usdNota(accMonto))+
+      card('Ticket prom.', ticket==null?'—':`<span class="cur">RD$</span>${fmtRD(ticket)}`, '<div class="kpi-d flat">por cotización</div>')+
       card('Tasa de cierre', tasa==null?'—':tasa+'%', `<div class="kpi-d flat">${acc.length}/${sent} enviadas</div>`);
+    renderAlerta();
     renderChart();
+  }
+  function renderAlerta(){
+    const rows=periodRows();
+    const vencidas = rows.filter(q=>q.estado==='vencida').length;
+    const porVencer = rows.filter(q=>{ const v=vencInfo(q); return v && v.cls==='soon'; }).length;
+    const overdue = rows.filter(q=>{ const v=vencInfo(q); return v && v.cls==='over'; }).length;
+    const el=$('dash-alert');
+    if(!vencidas && !porVencer && !overdue){ el.style.display='none'; return; }
+    const partes=[];
+    if(porVencer) partes.push(`<b>${porVencer}</b> por vencer pronto`);
+    if(overdue) partes.push(`<b>${overdue}</b> ya vencida(s) sin marcar`);
+    if(vencidas) partes.push(`<b>${vencidas}</b> vencida(s) sin cerrar`);
+    el.innerHTML = '⚠️ '+partes.join(' · ')+' — toca para revisar y dar seguimiento';
+    el.style.display='';
   }
   function renderChart(){
     const now=new Date(), ML=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'], data=[];
@@ -1526,6 +1554,13 @@
   $('estadoSeg').addEventListener('click', e=>{ const b=e.target.closest('button'); if(b) setEstadoSeg(b.dataset.e); });
   $('dash-filters').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; dashFilter=b.dataset.f; [...e.currentTarget.children].forEach(x=>x.classList.toggle('active',x===b)); renderDashTable(); });
   $('period-seg').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; dashPeriod=b.dataset.p; [...e.currentTarget.children].forEach(x=>x.classList.toggle('active',x===b)); renderDashboard(); });
+  $('dash-alert').addEventListener('click', ()=>{
+    const hasVenc=periodRows().some(q=>q.estado==='vencida');
+    dashFilter = hasVenc ? 'vencida' : 'enviada';
+    [...$('dash-filters').children].forEach(x=>x.classList.toggle('active', x.dataset.f===dashFilter));
+    renderDashTable();
+    $('dash-list').scrollIntoView({behavior:'smooth', block:'start'});
+  });
   $('btn-venc').addEventListener('click', marcarVencidas);
 
   /* ---- DESCARGAR PDF (sin pasar por el print del navegador) ---- */
