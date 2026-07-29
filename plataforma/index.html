@@ -13,9 +13,11 @@
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
   body{font-family:'Archivo',system-ui,sans-serif;background:#cdc8bb;color:var(--ink);line-height:1.45;-webkit-font-smoothing:antialiased;}
   .wrap{max-width:680px;margin:0 auto;}
-  input,button{font-family:inherit;color:var(--ink);}
+  input,button,select{font-family:inherit;color:var(--ink);}
   .hide{display:none!important;}
+  svg{width:20px;height:20px;flex-shrink:0;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;fill:none;}
 
+  /* LOGIN */
   #login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--teal);}
   .login-card{background:var(--paper);border-radius:16px;padding:30px 26px;width:100%;max-width:380px;}
   .login-card .brand{font-family:'Anton';font-size:30px;text-transform:uppercase;letter-spacing:.03em;}
@@ -29,56 +31,90 @@
   .lbtn{width:100%;background:var(--gold);color:var(--teal);border:none;border-radius:999px;padding:14px;font-weight:700;font-size:15px;cursor:pointer;margin-top:20px;}
   #login-msg{text-align:center;font-family:'IBM Plex Mono';font-size:12px;color:#b23b3b;margin-top:12px;min-height:16px;}
 
-  .topbar{background:var(--teal);color:#fff;padding:13px 16px;position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;}
-  .topbar .brand{font-family:'Anton';font-size:19px;text-transform:uppercase;letter-spacing:.03em;}
-  .topbar .brand .g{color:var(--gold);}
-  .topbar .tag{font-family:'IBM Plex Mono';font-size:7.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);}
-  .top-r{display:flex;align-items:center;gap:10px;}
-  .top-r .who{font-family:'IBM Plex Mono';font-size:11px;color:rgba(255,255,255,.7);}
-  .top-r button{background:rgba(255,255,255,.1);border:none;color:#fff;font-family:'IBM Plex Mono';font-size:11px;padding:6px 10px;border-radius:7px;cursor:pointer;}
+  /* TOPBAR */
+  .topbar{background:#fff;border-bottom:1px solid var(--line);padding:12px 14px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20;}
+  .burger{background:none;border:none;cursor:pointer;padding:2px;color:var(--teal);display:flex;}
+  .topbar .brand{font-family:'Anton';font-size:17px;text-transform:uppercase;flex:1;letter-spacing:.02em;} .topbar .brand .g{color:var(--gold);}
+  .topbar .pagettl{font-family:'IBM Plex Mono';font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-2);}
+
+  /* DRAWER */
+  .drawer{position:fixed;top:0;bottom:0;left:0;width:270px;max-width:82vw;background:#fff;z-index:60;transform:translateX(-100%);transition:transform .25s;box-shadow:8px 0 30px -10px rgba(0,0,0,.3);display:flex;flex-direction:column;padding:18px 0 10px;}
+  .drawer.open{transform:translateX(0);}
+  .drawer-ov{position:fixed;inset:0;background:rgba(19,47,51,.45);z-index:55;opacity:0;pointer-events:none;transition:.25s;}
+  .drawer-ov.open{opacity:1;pointer-events:auto;}
+  .dr-brand{font-family:'Anton';font-size:22px;text-transform:uppercase;padding:4px 22px 16px;letter-spacing:.03em;} .dr-brand .g{color:var(--gold);}
+  .dr-menu{flex:1;padding:10px 12px;overflow-y:auto;}
+  .dr-lbl{font-family:'IBM Plex Mono';font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--gray-2);padding:10px 10px 5px;}
+  .dr-item{display:flex;align-items:center;gap:13px;padding:12px;border-radius:10px;cursor:pointer;font-weight:600;font-size:15px;color:var(--teal);}
+  .dr-item svg{stroke:var(--teal);}
+  .dr-item.active{background:var(--teal);color:#fff;} .dr-item.active svg{stroke:#fff;}
+  .dr-foot{border-top:1px solid var(--line);padding:12px 14px 4px;}
+  .dr-user{display:flex;align-items:center;gap:11px;padding:6px;}
+  .dr-user .av{width:36px;height:36px;border-radius:50%;background:var(--teal-soft);color:var(--gold);display:grid;place-items:center;font-family:'Anton';font-size:15px;}
+  .dr-user .n{font-weight:700;font-size:14px;} .dr-user .s{font-family:'IBM Plex Mono';font-size:10px;color:var(--gray-2);}
 
   .view{padding:16px 14px 40px;}
+  .h1{font-family:'Anton';font-size:24px;text-transform:uppercase;}
+  .h1-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .newbtn{background:var(--gold);color:var(--teal);border:none;border-radius:999px;padding:9px 15px;font-family:'IBM Plex Mono';font-weight:600;font-size:12px;cursor:pointer;}
 
-  /* HOME */
-  .home-h{font-family:'Anton';font-size:24px;text-transform:uppercase;margin-bottom:4px;}
-  .home-sub{font-family:'IBM Plex Mono';font-size:11px;color:var(--gray-2);margin-bottom:18px;}
-  .mods{display:flex;flex-direction:column;gap:12px;}
-  .mod{display:flex;align-items:center;gap:14px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;box-shadow:0 6px 18px -13px rgba(19,47,51,.5);transition:.15s;}
-  .mod:active{transform:scale(.99);}
-  .mod .ic{width:48px;height:48px;border-radius:11px;background:var(--teal);color:var(--gold);display:grid;place-items:center;font-size:22px;flex-shrink:0;}
-  .mod.dash .ic{background:var(--gold);color:var(--teal);}
-  .mod .t{flex:1;}
-  .mod .t .n{font-family:'Archivo';font-weight:700;font-size:16px;}
-  .mod .t .d{font-family:'IBM Plex Mono';font-size:11px;color:var(--gray-2);margin-top:2px;}
-  .mod .arr{color:var(--line-2);font-size:20px;}
-
-  /* DASHBOARD GENERAL */
-  .back-btn{background:none;border:1px solid var(--line-2);border-radius:8px;padding:7px 12px;font-family:'IBM Plex Mono';font-size:11px;font-weight:600;cursor:pointer;margin-bottom:14px;color:var(--ink);}
-  .kpi-hero{background:var(--teal);color:#fff;border-radius:16px;padding:20px;margin-bottom:12px;}
+  /* DASHBOARD */
+  .segs{display:flex;gap:5px;background:#eae6da;border-radius:99px;padding:3px;margin-bottom:14px;}
+  .segs button{flex:1;font-family:'IBM Plex Mono';font-size:10.5px;font-weight:600;border:none;background:transparent;color:var(--gray-2);padding:8px;border-radius:99px;cursor:pointer;}
+  .segs button.active{background:var(--teal);color:#fff;}
+  .kpi-hero{background:var(--teal);color:#fff;border-radius:16px;padding:18px;margin-bottom:12px;}
   .kpi-hero .l{font-family:'IBM Plex Mono';font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);}
-  .kpi-hero .v{font-family:'Anton';font-size:34px;line-height:1;margin:5px 0;}
-  .kpi-hero .usd{font-family:'IBM Plex Mono';font-size:11px;color:rgba(255,255,255,.6);}
-  .kpi-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
-  .kpi{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:13px;}
-  .kpi .l{font-family:'IBM Plex Mono';font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-2);}
-  .kpi .v{font-family:'Anton';font-size:20px;margin-top:3px;}
-  .kpi .c{font-family:'IBM Plex Mono';font-size:10px;color:var(--gray-2);margin-top:2px;}
+  .kpi-hero .v{font-family:'Anton';font-size:32px;line-height:1;margin:5px 0 3px;}
+  .kpi-hero .usd{font-family:'IBM Plex Mono';font-size:10px;color:rgba(255,255,255,.6);}
+  .kpi2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+  .kpi{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px;}
+  .kpi .l{font-family:'IBM Plex Mono';font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-2);}
+  .kpi .v{font-family:'Anton';font-size:19px;margin-top:3px;}
+  .kpi .c{font-family:'IBM Plex Mono';font-size:9.5px;color:var(--gray-2);}
+  .chart{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px 14px 4px;margin-bottom:14px;}
+  .chart .t{font-family:'IBM Plex Mono';font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-2);margin-bottom:14px;}
+  .bars{display:flex;align-items:flex-end;gap:8px;height:110px;}
+  .bars .bcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;}
+  .bars .bar{width:100%;background:var(--teal);border-radius:5px 5px 0 0;min-height:2px;}
+  .bars .bar.gold{background:var(--gold);}
+  .bars .bl{font-family:'IBM Plex Mono';font-size:8px;color:var(--gray-2);margin-top:5px;}
   .sec-h{font-family:'IBM Plex Mono';font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gray-2);margin:6px 2px 10px;}
-  .rrow{display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:11px 12px;margin-bottom:8px;}
-  .rrow .badge{font-family:'IBM Plex Mono';font-size:8px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:99px;flex-shrink:0;}
+  .rrow{display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:10px 12px;margin-bottom:8px;}
+  .badge{font-family:'IBM Plex Mono';font-size:8px;font-weight:600;text-transform:uppercase;padding:3px 7px;border-radius:99px;flex-shrink:0;}
   .badge.planos{background:#e7eef0;color:var(--teal);} .badge.remod{background:#fbf0d6;color:#8a6a12;}
-  .rrow .m{flex:1;min-width:0;}
-  .rrow .m .n{font-family:'Archivo';font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .rrow .m{flex:1;min-width:0;} .rrow .m .n{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .rrow .m .s{font-family:'IBM Plex Mono';font-size:10px;color:var(--gray-2);}
   .rrow .amt{font-family:'IBM Plex Mono';font-weight:600;font-size:13px;white-space:nowrap;}
   .empty{text-align:center;font-family:'IBM Plex Mono';font-size:12px;color:var(--gray-2);padding:30px 20px;}
 
+  /* CLIENTES */
+  .cli{display:flex;align-items:center;gap:12px;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:11px 12px;margin-bottom:8px;cursor:pointer;}
+  .cli .av{width:38px;height:38px;border-radius:50%;background:var(--teal-soft);color:var(--gold);display:grid;place-items:center;font-family:'Anton';font-size:16px;flex-shrink:0;}
+  .cli .m{flex:1;min-width:0;} .cli .m .n{font-weight:600;font-size:14px;} .cli .m .s{font-family:'IBM Plex Mono';font-size:10px;color:var(--gray-2);}
+  .cli-card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px;}
+  .cli-card .field{margin-bottom:10px;}
+  .cli-card label{display:block;font-family:'IBM Plex Mono';font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-2);margin-bottom:4px;}
+  .cli-card input{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:14px;outline:none;background:#fff;}
+  .cli-card input:focus{border-color:var(--gold);}
+  .cli-title{font-family:'IBM Plex Mono';font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;}
+  .save-cli{width:100%;background:var(--teal);color:#fff;border:none;border-radius:10px;padding:12px;font-family:'IBM Plex Mono';font-weight:600;font-size:13px;cursor:pointer;margin-top:4px;}
+
+  /* COTIZAR */
+  .cot-cards{display:flex;flex-direction:column;gap:12px;margin-bottom:20px;}
+  .cot-card{display:flex;align-items:center;gap:14px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;cursor:pointer;box-shadow:0 6px 18px -14px rgba(19,47,51,.5);}
+  .cot-card .ic{width:50px;height:50px;border-radius:12px;background:var(--teal);display:grid;place-items:center;flex-shrink:0;}
+  .cot-card .ic svg{stroke:var(--gold);width:24px;height:24px;}
+  .cot-card.rem .ic{background:var(--gold);} .cot-card.rem .ic svg{stroke:var(--teal);}
+  .cot-card .t .n{font-family:'Archivo';font-weight:700;font-size:17px;} .cot-card .t .d{font-family:'IBM Plex Mono';font-size:11px;color:var(--gray-2);margin-top:2px;}
+
   /* EMBED */
-  #embed{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;background:#cdc8bb;}
+  #embed{position:fixed;inset:0;z-index:80;display:flex;flex-direction:column;background:#cdc8bb;}
   .embed-bar{background:var(--teal);color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px;}
   .embed-bar button{background:rgba(255,255,255,.12);border:none;color:#fff;border-radius:8px;padding:7px 12px;font-family:'IBM Plex Mono';font-size:12px;font-weight:600;cursor:pointer;}
   .embed-bar .t{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);}
   #embed iframe{flex:1;border:none;width:100%;}
+  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--teal);color:#fff;font-family:'IBM Plex Mono';font-size:12px;padding:10px 18px;border-radius:99px;z-index:120;opacity:0;transition:.25s;pointer-events:none;}
+  .toast.show{opacity:1;} .toast.err{background:#8a2b2b;}
 </style>
 </head>
 <body>
@@ -90,10 +126,7 @@
     <label for="login-email">Correo</label>
     <input id="login-email" type="email" autocomplete="username" placeholder="tu@correo.com">
     <label for="login-pass">Contraseña</label>
-    <div class="pass-wrap">
-      <input id="login-pass" type="password" autocomplete="current-password" placeholder="••••••••">
-      <button type="button" class="pass-toggle" id="toggle-pass">👁</button>
-    </div>
+    <div class="pass-wrap"><input id="login-pass" type="password" autocomplete="current-password" placeholder="••••••••"><button type="button" class="pass-toggle" id="toggle-pass">👁</button></div>
     <button class="lbtn" id="login-btn">Entrar</button>
     <div id="login-msg"></div>
   </div>
@@ -101,24 +134,32 @@
 
 <div id="app" class="hide">
   <div class="topbar">
-    <div><div class="brand"><span class="g">Laios</span> Group</div><div class="tag">Plataforma</div></div>
-    <div class="top-r"><span class="who" id="who"></span><button id="logout">Salir</button></div>
+    <button class="burger" id="burger"></button>
+    <div class="brand"><span class="g">Laios</span> Group</div>
+    <div class="pagettl" id="pagettl">Dashboard</div>
   </div>
-  <div class="wrap">
-    <div class="view" id="v-home">
-      <div class="home-h">¿Qué vas a cotizar?</div>
-      <div class="home-sub">Elige un módulo o revisa el resumen general.</div>
-      <div class="mods">
-        <div class="mod" data-go="planos"><div class="ic">🏛️</div><div class="t"><div class="n">Planos / Diseño</div><div class="d">Honorarios de arquitectura y diseño</div></div><div class="arr">›</div></div>
-        <div class="mod" data-go="remod"><div class="ic">🔨</div><div class="t"><div class="n">Remodelación</div><div class="d">Levantamiento por espacios y partidas</div></div><div class="arr">›</div></div>
-        <div class="mod dash" data-go="dash"><div class="ic">📊</div><div class="t"><div class="n">Dashboard general</div><div class="d">Todo junto: planos + remodelación</div></div><div class="arr">›</div></div>
-      </div>
-    </div>
 
-    <div class="view hide" id="v-dash">
-      <button class="back-btn" id="dash-back">← Inicio</button>
-      <div id="dash-cont"><div class="empty">Cargando…</div></div>
+  <div class="drawer-ov" id="dr-ov"></div>
+  <div class="drawer" id="drawer">
+    <div class="dr-brand"><span class="g">Laios</span> Group</div>
+    <div class="dr-menu">
+      <div class="dr-lbl">Menú</div>
+      <div class="dr-item active" data-nav="dash"></div>
+      <div class="dr-item" data-nav="cli"></div>
+      <div class="dr-item" data-nav="cot"></div>
+      <div class="dr-lbl" style="margin-top:6px">Cuenta</div>
+      <div class="dr-item" data-nav="ajustes"></div>
     </div>
+    <div class="dr-foot"><div class="dr-user"><div class="av" id="dr-av">O</div><div><div class="n" id="dr-name">—</div><div class="s">Laios Group</div></div></div>
+      <div class="dr-item" id="dr-logout" style="margin-top:4px"></div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="view" id="v-dash"></div>
+    <div class="view hide" id="v-cli"></div>
+    <div class="view hide" id="v-cot"></div>
+    <div class="view hide" id="v-ajustes"><div class="h1-row"><div class="h1">Ajustes</div></div><div class="empty">Aquí irán tarifas base, marca, usuarios del equipo y preferencias. (Próxima etapa.)</div></div>
   </div>
 </div>
 
@@ -126,6 +167,7 @@
   <div class="embed-bar"><button id="embed-back">← Inicio</button><span class="t" id="embed-title"></span></div>
   <iframe id="embed-frame" title="módulo"></iframe>
 </div>
+<div class="toast" id="toast"></div>
 
 <script>
   const SB_URL='https://yfuhacfhgyzkkalullsm.supabase.co';
@@ -133,14 +175,37 @@
   const URL_PLANOS='../index.html';
   const URL_REMOD='../remodelaciones/index.html';
   let sb=null, userEmail='';
+  let clientes=[], allQuotes=[], dashPeriod='mes', cliDetailId=undefined;
   try{ sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,storage:window.localStorage}}); }catch(e){ console.error(e); }
 
   const $=id=>document.getElementById(id);
   const fmt=n=>'RD$ '+Number(Math.round(n||0)).toLocaleString('en-US');
-  const esc=s=>String(s==null?'':s).replace(/</g,'&lt;');
+  const fmtShort=n=>{ n=Number(n)||0; if(n>=1e6) return 'RD$ '+(n/1e6).toFixed(2)+'M'; if(n>=1e3) return 'RD$ '+Math.round(n/1e3)+'K'; return 'RD$ '+Math.round(n); };
+  const esc=s=>String(s==null?'':s).replace(/"/g,'&quot;').replace(/</g,'&lt;');
   const esUSD=r=>(r.moneda||'').toUpperCase()==='USD';
+  const toast=(m,err)=>{const t=$('toast');t.textContent=m;t.className='toast show'+(err?' err':'');setTimeout(()=>t.className='toast',2200);};
 
-  // AUTH
+  // ICONOS (estilo 2 redondeado, teal via currentColor/stroke)
+  const IC={
+    dash:'<rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/>',
+    cli:'<circle cx="9" cy="8" r="3.4"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.5a3 3 0 0 1 0 5.5"/><path d="M17.8 20a5 5 0 0 0-3-4.6"/>',
+    cot:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/>',
+    ajustes:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
+    logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
+    burger:'<path d="M4 6h16M4 12h16M4 18h16"/>',
+    plus:'<path d="M12 5v14M5 12h14"/>'
+  };
+  const svg=(name,sz)=>'<svg viewBox="0 0 24 24"'+(sz?' style="width:'+sz+'px;height:'+sz+'px"':'')+'>'+IC[name]+'</svg>';
+
+  // pintar íconos fijos
+  $('burger').innerHTML=svg('burger');
+  document.querySelector('[data-nav="dash"]').innerHTML=svg('dash')+'<span>Dashboard</span>';
+  document.querySelector('[data-nav="cli"]').innerHTML=svg('cli')+'<span>Clientes</span>';
+  document.querySelector('[data-nav="cot"]').innerHTML=svg('cot')+'<span>Cotizar</span>';
+  document.querySelector('[data-nav="ajustes"]').innerHTML=svg('ajustes')+'<span>Ajustes</span>';
+  $('dr-logout').innerHTML=svg('logout')+'<span>Cerrar sesión</span>';
+
+  // ================= AUTH =================
   $('toggle-pass').addEventListener('click',()=>{const p=$('login-pass'),b=$('toggle-pass');const sh=p.type==='password';p.type=sh?'text':'password';b.textContent=sh?'🙈':'👁';});
   $('login-btn').addEventListener('click',()=>login());
   $('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
@@ -153,7 +218,7 @@
     $('login-msg').textContent=attempt>0?'El servidor está despertando… ('+attempt+'/3)':'Entrando…';
     try{
       const {data,error}=await sb.auth.signInWithPassword({email,password});
-      if(error){ if(isNet(error)&&attempt<3){setTimeout(()=>login(attempt+1),4000);return;} $('login-msg').textContent=isNet(error)?'Sin conexión; espera ~30s y reintenta.':'Error: '+error.message; return; }
+      if(error){ if(isNet(error)&&attempt<3){setTimeout(()=>login(attempt+1),4000);return;} $('login-msg').textContent=isNet(error)?'Sin conexión; espera ~30s.':'Error: '+error.message; return; }
       onLogin(data.session);
     }catch(e){ if(isNet(e)&&attempt<3){setTimeout(()=>login(attempt+1),4000);return;} $('login-msg').textContent='No se pudo conectar.'; }
   }
@@ -162,10 +227,11 @@
     try{localStorage.setItem('laios_email',userEmail);}catch(e){}
     $('login-pass').value='';
     $('login').classList.add('hide'); $('app').classList.remove('hide');
-    $('who').textContent=userEmail.split('@')[0];
-    irHome();
+    const nm=userEmail.split('@')[0];
+    $('dr-name').textContent=nm; $('dr-av').textContent=(nm[0]||'?').toUpperCase();
+    cargarTodo(); navegar('dash');
   }
-  $('logout').addEventListener('click',async()=>{ await sb.auth.signOut(); location.reload(); });
+  $('dr-logout').addEventListener('click',async()=>{ await sb.auth.signOut(); location.reload(); });
   async function checkSession(){
     if(!sb) return;
     const {data}=await sb.auth.getSession();
@@ -173,57 +239,136 @@
     else { try{const em=localStorage.getItem('laios_email'); if(em)$('login-email').value=em;}catch(e){} }
   }
 
-  // NAVEGACIÓN
-  function irHome(){ $('embed').classList.add('hide'); $('embed-frame').src='about:blank'; $('v-dash').classList.add('hide'); $('v-home').classList.remove('hide'); }
-  document.querySelector('.mods').addEventListener('click',e=>{
-    const m=e.target.closest('.mod'); if(!m) return;
-    const go=m.dataset.go;
-    if(go==='dash'){ $('v-home').classList.add('hide'); $('v-dash').classList.remove('hide'); cargarDashboard(); }
-    else abrirModulo(go);
+  // ================= DRAWER / NAV =================
+  const drawer=$('drawer'), ov=$('dr-ov');
+  const openDrawer=()=>{drawer.classList.add('open');ov.classList.add('open');};
+  const closeDrawer=()=>{drawer.classList.remove('open');ov.classList.remove('open');};
+  $('burger').addEventListener('click',openDrawer);
+  ov.addEventListener('click',closeDrawer);
+  drawer.addEventListener('click',e=>{ const it=e.target.closest('.dr-item'); if(!it||!it.dataset.nav) return; navegar(it.dataset.nav); closeDrawer(); });
+  const TITULOS={dash:'Dashboard',cli:'Clientes',cot:'Cotizar',ajustes:'Ajustes'};
+  function navegar(w){
+    ['dash','cli','cot','ajustes'].forEach(v=>$('v-'+v).classList.toggle('hide',v!==w));
+    drawer.querySelectorAll('.dr-item[data-nav]').forEach(x=>x.classList.toggle('active',x.dataset.nav===w));
+    $('pagettl').textContent=TITULOS[w]||'';
+    if(w==='dash') renderDash();
+    else if(w==='cli') renderClientes();
+    else if(w==='cot') renderCotizar();
+    window.scrollTo(0,0);
+  }
+
+  // ================= DATOS =================
+  async function cargarTodo(){
+    try{
+      const [cl,pc,rc]=await Promise.all([
+        sb.from('clientes').select('id,nombre,contacto,rnc').order('nombre'),
+        sb.from('cotizaciones').select('numero,cliente_id,cliente_nombre,proyecto,estado,moneda,total,created_at').order('created_at',{ascending:false}),
+        sb.from('remodelaciones').select('numero,cliente_id,cliente_nombre,proyecto,estado,moneda,total,created_at').order('created_at',{ascending:false})
+      ]);
+      clientes=cl.data||[];
+      const planos=(pc.data||[]).map(r=>({...r,tipo:'planos'}));
+      const remod=(rc.data||[]).map(r=>({...r,tipo:'remod'}));
+      allQuotes=[...planos,...remod].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+      renderDash();
+    }catch(e){ console.error(e); }
+  }
+  const inPeriod=(dstr,p)=>{
+    if(p==='todo') return true;
+    const d=dstr?new Date(dstr):null; if(!d) return false; const now=new Date();
+    if(p==='semana'){ const diff=(now-d)/86400000; return diff>=0&&diff<=7; }
+    if(p==='mes') return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
+    if(p==='ano') return d.getFullYear()===now.getFullYear();
+    return true;
+  };
+  const sumDop=arr=>arr.filter(r=>!esUSD(r)).reduce((s,r)=>s+(Number(r.total)||0),0);
+  const sumUsd=arr=>arr.filter(r=>esUSD(r)).reduce((s,r)=>s+(Number(r.total)||0),0);
+
+  // ================= DASHBOARD =================
+  function renderDash(){
+    const rows=allQuotes.filter(r=>inPeriod(r.created_at,dashPeriod));
+    const planos=rows.filter(r=>r.tipo==='planos'), remod=rows.filter(r=>r.tipo==='remod');
+    const totDop=sumDop(rows), totUsd=sumUsd(rows);
+    // chart: últimos 6 meses (DOP, ambos)
+    const now=new Date(), meses=[];
+    for(let i=5;i>=0;i--){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); meses.push({y:d.getFullYear(),m:d.getMonth(),lbl:d.toLocaleDateString('es-DO',{month:'short'})}); }
+    const vals=meses.map(mm=>sumDop(allQuotes.filter(r=>{const d=r.created_at?new Date(r.created_at):null;return d&&d.getFullYear()===mm.y&&d.getMonth()===mm.m;})));
+    const max=Math.max(...vals,1);
+    const barsHTML=meses.map((mm,i)=>'<div class="bcol"><div class="bar'+(i===5?' gold':'')+'" style="height:'+Math.max(2,Math.round(vals[i]/max*100))+'%"></div><div class="bl">'+mm.lbl+'</div></div>').join('');
+    const recientes=rows.slice(0,8).map(r=>{
+      const est=r.estado||'borrador';
+      return '<div class="rrow"><span class="badge '+r.tipo+'">'+(r.tipo==='planos'?'Planos':'Remod')+'</span><div class="m"><div class="n">'+esc(r.cliente_nombre||r.proyecto||'—')+'</div><div class="s">'+esc(r.numero||'—')+' · '+est+'</div></div><div class="amt">'+(esUSD(r)?'US$ ':'RD$ ')+Number(Math.round(r.total||0)).toLocaleString('en-US')+'</div></div>';
+    }).join('') || '<div class="empty">Sin cotizaciones en este período.</div>';
+    const P=[['semana','Semana'],['mes','Mes'],['ano','Año'],['todo','Todo']];
+    $('v-dash').innerHTML=
+      '<div class="h1-row"><div class="h1">Dashboard</div></div>'+
+      '<div class="segs">'+P.map(x=>'<button data-p="'+x[0]+'" class="'+(dashPeriod===x[0]?'active':'')+'">'+x[1]+'</button>').join('')+'</div>'+
+      '<div class="kpi-hero"><div class="l">Total cotizado</div><div class="v">'+fmt(totDop)+'</div>'+(totUsd>0?'<div class="usd">+ US$ '+Number(Math.round(totUsd)).toLocaleString('en-US')+'</div>':'')+'</div>'+
+      '<div class="kpi2"><div class="kpi"><div class="l">Planos / Diseño</div><div class="v">'+fmtShort(sumDop(planos))+'</div><div class="c">'+planos.length+' cotización(es)</div></div><div class="kpi"><div class="l">Remodelación</div><div class="v">'+fmtShort(sumDop(remod))+'</div><div class="c">'+remod.length+' cotización(es)</div></div></div>'+
+      '<div class="chart"><div class="t">Cotizado por mes · últimos 6</div><div class="bars">'+barsHTML+'</div></div>'+
+      '<div class="sec-h">Actividad reciente</div>'+recientes;
+  }
+  $('v-dash').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b&&b.dataset.p){ dashPeriod=b.dataset.p; renderDash(); } });
+
+  // ================= CLIENTES =================
+  function contarCot(cid){ return allQuotes.filter(q=>q.cliente_id===cid).length; }
+  function renderClientes(){
+    cliDetailId=undefined;
+    const lista=clientes.length? clientes.map(c=>{
+      const n=contarCot(c.id);
+      return '<div class="cli" data-cli="'+c.id+'"><div class="av">'+esc((c.nombre||'?')[0].toUpperCase())+'</div><div class="m"><div class="n">'+esc(c.nombre)+'</div><div class="s">'+n+' cotización(es)'+(c.rnc?' · RNC '+esc(c.rnc):'')+'</div></div></div>';
+    }).join('') : '<div class="empty">Aún no tienes clientes. Toca "+ Nuevo".</div>';
+    $('v-cli').innerHTML='<div class="h1-row"><div class="h1">Clientes</div><button class="newbtn" id="cli-new">+ Nuevo</button></div><div id="cli-body">'+lista+'</div>';
+  }
+  function formCliente(c){
+    cliDetailId=c?c.id:null;
+    $('v-cli').innerHTML='<div class="h1-row"><div class="h1">'+(c?'Editar':'Nuevo')+' cliente</div><button class="newbtn" id="cli-volver" style="background:#eae6da;color:var(--ink)">← Volver</button></div>'+
+      '<div class="cli-card"><div class="cli-title">'+(c?'Editar cliente':'Nuevo cliente')+'</div>'+
+      '<div class="field"><label>Nombre</label><input id="c-nombre" value="'+esc(c?c.nombre:'')+'"></div>'+
+      '<div class="field"><label>Contacto</label><input id="c-contacto" value="'+esc(c?c.contacto:'')+'"></div>'+
+      '<div class="field"><label>RNC / Cédula</label><input id="c-rnc" value="'+esc(c?c.rnc:'')+'"></div>'+
+      '<button class="save-cli" id="c-save">'+(c?'Guardar cambios':'Crear cliente')+'</button></div>';
+  }
+  $('v-cli').addEventListener('click',e=>{
+    if(e.target.id==='cli-new'){ formCliente(null); return; }
+    if(e.target.id==='cli-volver'){ renderClientes(); return; }
+    if(e.target.id==='c-save'){ guardarCliente(); return; }
+    const c=e.target.closest('[data-cli]'); if(c){ const cl=clientes.find(x=>x.id===c.dataset.cli); if(cl) formCliente(cl); }
   });
-  $('dash-back').addEventListener('click',irHome);
-  $('embed-back').addEventListener('click',irHome);
+  async function guardarCliente(){
+    const datos={nombre:$('c-nombre').value.trim(),contacto:$('c-contacto').value.trim()||null,rnc:$('c-rnc').value.trim()||null};
+    if(!datos.nombre){ toast('El nombre no puede estar vacío',true); return; }
+    try{
+      if(cliDetailId){ const {error}=await sb.from('clientes').update(datos).eq('id',cliDetailId); if(error){toast('Error al guardar',true);return;} const c=clientes.find(x=>x.id===cliDetailId); if(c)Object.assign(c,datos); toast('Cliente actualizado'); }
+      else { const {data,error}=await sb.from('clientes').insert(datos).select().single(); if(error){toast('Error al crear',true);return;} clientes.push(data); clientes.sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||'')); toast('Cliente creado'); }
+      renderClientes();
+    }catch(e){ toast('Error de conexión',true); }
+  }
+
+  // ================= COTIZAR =================
+  function renderCotizar(){
+    const recientes=allQuotes.slice(0,6).map(r=>{
+      const est=r.estado||'borrador';
+      return '<div class="rrow" data-open="'+r.tipo+'"><span class="badge '+r.tipo+'">'+(r.tipo==='planos'?'Planos':'Remod')+'</span><div class="m"><div class="n">'+esc(r.cliente_nombre||r.proyecto||'—')+'</div><div class="s">'+esc(r.numero||'—')+' · '+est+'</div></div><div class="amt">'+(esUSD(r)?'US$ ':'RD$ ')+Number(Math.round(r.total||0)).toLocaleString('en-US')+'</div></div>';
+    }).join('') || '<div class="empty">Aún no hay cotizaciones.</div>';
+    $('v-cot').innerHTML='<div class="h1-row"><div class="h1">Cotizar</div></div>'+
+      '<div class="cot-cards">'+
+        '<div class="cot-card" data-go="planos"><div class="ic">'+svg('cot',24)+'</div><div class="t"><div class="n">Nueva de planos</div><div class="d">Honorarios de diseño y arquitectura</div></div></div>'+
+        '<div class="cot-card rem" data-go="remod"><div class="ic">'+svg('cot',24)+'</div><div class="t"><div class="n">Nueva remodelación</div><div class="d">Levantamiento por espacios y partidas</div></div></div>'+
+      '</div>'+
+      '<div class="sec-h">Últimas cotizaciones</div>'+recientes;
+  }
+  $('v-cot').addEventListener('click',e=>{
+    const card=e.target.closest('[data-go]'); if(card){ abrirModulo(card.dataset.go); return; }
+    const row=e.target.closest('[data-open]'); if(row){ abrirModulo(row.dataset.open); }
+  });
+
+  // ================= EMBED (temporal, hasta fusión 2b/2c) =================
   function abrirModulo(go){
     $('embed-title').textContent = go==='planos'?'Planos / Diseño':'Remodelación';
     $('embed-frame').src = go==='planos'?URL_PLANOS:URL_REMOD;
     $('embed').classList.remove('hide');
   }
-
-  // DASHBOARD GENERAL (unificado)
-  async function cargarDashboard(){
-    const cont=$('dash-cont'); cont.innerHTML='<div class="empty">Cargando…</div>';
-    if(!sb){ cont.innerHTML='<div class="empty">Sin conexión.</div>'; return; }
-    try{
-      const [pc,rc]=await Promise.all([
-        sb.from('cotizaciones').select('numero,cliente_nombre,proyecto,estado,moneda,total,created_at').order('created_at',{ascending:false}),
-        sb.from('remodelaciones').select('numero,cliente_nombre,proyecto,estado,moneda,total,created_at').order('created_at',{ascending:false})
-      ]);
-      const planos=(pc.data||[]).map(r=>({...r,tipo:'planos'}));
-      const remod=(rc.data||[]).map(r=>({...r,tipo:'remod'}));
-      const all=[...planos,...remod].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
-
-      const sumDop=arr=>arr.filter(r=>!esUSD(r)).reduce((s,r)=>s+(Number(r.total)||0),0);
-      const sumUsd=arr=>arr.filter(r=>esUSD(r)).reduce((s,r)=>s+(Number(r.total)||0),0);
-      const totDop=sumDop(all), totUsd=sumUsd(all);
-      const pDop=sumDop(planos), rDop=sumDop(remod);
-
-      const recientes=all.slice(0,8).map(r=>{
-        const est=r.estado||'borrador';
-        return '<div class="rrow"><span class="badge '+r.tipo+'">'+(r.tipo==='planos'?'Planos':'Remod')+'</span>'+
-          '<div class="m"><div class="n">'+esc(r.cliente_nombre||r.proyecto||'—')+'</div>'+
-          '<div class="s">'+esc(r.numero||'—')+' · '+est+'</div></div>'+
-          '<div class="amt">'+(esUSD(r)?'US$ ':'RD$ ')+Number(Math.round(r.total||0)).toLocaleString('en-US')+'</div></div>';
-      }).join('') || '<div class="empty">Aún no hay cotizaciones.</div>';
-
-      cont.innerHTML=
-        '<div class="kpi-hero"><div class="l">Total cotizado</div><div class="v">'+fmt(totDop)+'</div>'+(totUsd>0?'<div class="usd">+ US$ '+Number(Math.round(totUsd)).toLocaleString('en-US')+'</div>':'')+'</div>'+
-        '<div class="kpi-2">'+
-          '<div class="kpi"><div class="l">Planos / Diseño</div><div class="v">'+fmt(pDop)+'</div><div class="c">'+planos.length+' cotización(es)</div></div>'+
-          '<div class="kpi"><div class="l">Remodelación</div><div class="v">'+fmt(rDop)+'</div><div class="c">'+remod.length+' cotización(es)</div></div>'+
-        '</div>'+
-        '<div class="sec-h">Actividad reciente</div>'+recientes;
-    }catch(e){ cont.innerHTML='<div class="empty">Error de conexión.</div>'; }
-  }
+  $('embed-back').addEventListener('click',()=>{ $('embed').classList.add('hide'); $('embed-frame').src='about:blank'; cargarTodo(); });
 
   checkSession();
 </script>
