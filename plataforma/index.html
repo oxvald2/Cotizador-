@@ -388,7 +388,7 @@
     try{
       const [cl,pc,rc]=await Promise.all([
         sb.from('clientes').select('id,nombre,contacto,rnc').order('nombre'),
-        sb.from('cotizaciones').select('numero,cliente_id,cliente_nombre,proyecto,estado,moneda,total,created_at').order('created_at',{ascending:false}),
+        sb.from('cotizaciones').select('id,numero,cliente_id,cliente_nombre,proyecto,estado,moneda,total,created_at').order('created_at',{ascending:false}),
         sb.from('remodelaciones').select('id,numero,cliente_id,cliente_nombre,proyecto,estado,moneda,total,created_at').order('created_at',{ascending:false})
       ]);
       clientes=cl.data||[];
@@ -485,13 +485,15 @@
   }
   $('v-cot').addEventListener('click',e=>{
     const card=e.target.closest('[data-go]'); if(card){ const go=card.dataset.go; if(go==='remod') RemodMod.nuevo(); else abrirModulo('planos'); return; }
-    const row=e.target.closest('[data-openrow]'); if(row){ const tipo=row.dataset.tipo, rid=row.dataset.rid; if(tipo==='remod'&&rid) RemodMod.abrir(rid); else abrirModulo('planos'); }
+    const row=e.target.closest('[data-openrow]'); if(row){ const tipo=row.dataset.tipo, rid=row.dataset.rid; if(tipo==='remod'&&rid) RemodMod.abrir(rid); else abrirModulo('planos', rid||null); }
   });
 
   // ================= EMBED (temporal, hasta fusión 2b/2c) =================
-  function abrirModulo(go){
+  function abrirModulo(go,id){
     $('embed-title').textContent = go==='planos'?'Planos / Diseño':'Remodelación';
-    $('embed-frame').src = go==='planos'?URL_PLANOS:URL_REMOD;
+    let u = go==='planos'?URL_PLANOS:URL_REMOD;
+    u += '?embed=1'+(id?('&open='+encodeURIComponent(id)):'&nuevo=1');
+    $('embed-frame').src = u;
     $('embed').classList.remove('hide');
   }
   $('embed-back').addEventListener('click',()=>{ $('embed').classList.add('hide'); $('embed-frame').src='about:blank'; cargarTodo(); });
