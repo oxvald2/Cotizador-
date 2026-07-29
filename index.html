@@ -1601,10 +1601,12 @@
 (function(){
   var p = new URLSearchParams(location.search);
   if (p.get('embed') !== '1') return;
+  // ocultar desde el PRIMER pintado: menú, dashboard y clientes nunca se ven
   var st = document.createElement('style');
-  st.textContent = '#topbar{display:none !important;}';
+  st.textContent = '#topbar,#dashboard-view,#clientes-view{display:none !important;} #app-view{visibility:hidden;} body{background:#132f33 !important;}';
   document.head.appendChild(st);
   var done = false;
+  function reveal(){ var s2=document.createElement('style'); s2.textContent='#app-view{visibility:visible !important;} body{background:#cdc8bb !important;}'; document.head.appendChild(s2); }
   var iv = setInterval(function(){
     var app = document.getElementById('app-view');
     if (!app || app.style.display === 'none' || done) return;
@@ -1620,8 +1622,9 @@
         else { var nc2 = document.getElementById('nav-cot'); if (nc2) nc2.click(); }
       }
     } catch(e){ console.error('embed boot:', e); }
-  }, 200);
-  setTimeout(function(){ clearInterval(iv); }, 15000);
+    requestAnimationFrame(function(){ requestAnimationFrame(reveal); });
+  }, 60);
+  setTimeout(function(){ done=true; clearInterval(iv); reveal(); }, 15000);
 })();
 </script>
 </body>
