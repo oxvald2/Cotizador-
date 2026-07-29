@@ -1595,5 +1595,34 @@
 
   checkSession();
 </script>
+
+<!-- === Modo plataforma (embed): no toca la lógica fiscal, solo esconde el menú y entra directo === -->
+<script>
+(function(){
+  var p = new URLSearchParams(location.search);
+  if (p.get('embed') !== '1') return;
+  var st = document.createElement('style');
+  st.textContent = '#topbar{display:none !important;}';
+  document.head.appendChild(st);
+  var done = false;
+  var iv = setInterval(function(){
+    var app = document.getElementById('app-view');
+    if (!app || app.style.display === 'none' || done) return;
+    done = true; clearInterval(iv);
+    try {
+      var openId = p.get('open');
+      if (openId) {
+        if (typeof abrirCotizacion === 'function') abrirCotizacion(openId);
+        else { var nc = document.getElementById('nav-cot'); if (nc) nc.click(); }
+      } else {
+        var bn = document.getElementById('btn-nueva');
+        if (bn) bn.click();
+        else { var nc2 = document.getElementById('nav-cot'); if (nc2) nc2.click(); }
+      }
+    } catch(e){ console.error('embed boot:', e); }
+  }, 200);
+  setTimeout(function(){ clearInterval(iv); }, 15000);
+})();
+</script>
 </body>
 </html>
